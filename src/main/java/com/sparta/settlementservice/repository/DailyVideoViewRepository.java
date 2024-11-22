@@ -28,6 +28,8 @@ public interface DailyVideoViewRepository extends JpaRepository<DailyVideoView, 
     // 주어진 날짜 범위(startDate ~ endDate)에 해당하는 모든 DailyVideoView 데이터를 조회
     List<DailyVideoView> findAllByDateBetween(LocalDate startDate, LocalDate endDate);
 
+    @Query("SELECT d FROM DailyVideoView d WHERE d.date = :date")
+    List<DailyVideoView> findByDate(@Param("date") LocalDate date);
 
     List<DailyVideoView> findTop5ByDateBetweenOrderByPlayTimeDesc(LocalDate startDate, LocalDate endDate);
 }
