@@ -1,8 +1,16 @@
 package com.sparta.settlementservice.batch.schedule;
 
+import org.springframework.batch.core.Job;
+import org.springframework.batch.core.JobParametersBuilder;
 import org.springframework.batch.core.configuration.JobRegistry;
 import org.springframework.batch.core.launch.JobLauncher;
+import org.springframework.batch.core.repository.JobExecutionAlreadyRunningException;
+import org.springframework.batch.core.repository.JobRestartException;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.scheduling.annotation.Scheduled;
+
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 
 @Configuration
 public class StatisticsSchedule {
@@ -72,29 +80,29 @@ public class StatisticsSchedule {
 
 
    // 월 단위 통계처리
-//    @Scheduled(initialDelay = 5000, fixedRate = Long.MAX_VALUE)
-//    public void runMonthlyStatisticsJob() {
-//        long startTime = System.currentTimeMillis();  // 시작 시간 기록
-//        try {
-//            Job job = jobRegistry.getJob("monthlyStatisticsJob");
-//
-//            // 현재 시간을 기반으로 jobParameters 설정 (매 실행 시 고유한 파라미터 생성)
-//            jobLauncher.run(job, new JobParametersBuilder()
-//                    .addString("startDate", LocalDateTime.now().minusDays(7).format(DateTimeFormatter.ISO_DATE))
-//                    .addString("endDate", LocalDateTime.now().format(DateTimeFormatter.ISO_DATE))
-//                    .addLong("timestamp", System.currentTimeMillis()) // 매번 다른 timestamp로 고유 실행
-//                    .toJobParameters());
-//
-//        } catch (JobExecutionAlreadyRunningException | JobRestartException e) {
-//            System.err.println("Job이 이미 실행 중이거나 재시작할 수 없습니다: " + e.getMessage());
-//        } catch (Exception e) {
-//            System.err.println("Job 실행 중 예외 발생: " + e.getMessage());
-//        }
-//        long endTime = System.currentTimeMillis();  // 종료 시간 기록
-//          long executionTime = endTime - startTime;   // 실행 시간 계산
-//
-//          System.out.println("Monthly Statistics Job Execution Time: " + executionTime + " ms");
-//    }
+    @Scheduled(initialDelay = 5000, fixedRate = Long.MAX_VALUE)
+    public void runMonthlyStatisticsJob() {
+        long startTime = System.currentTimeMillis();  // 시작 시간 기록
+        try {
+            Job job = jobRegistry.getJob("monthlyStatisticsJob");
+
+            // 현재 시간을 기반으로 jobParameters 설정 (매 실행 시 고유한 파라미터 생성)
+            jobLauncher.run(job, new JobParametersBuilder()
+                    .addString("startDate", LocalDateTime.now().minusDays(7).format(DateTimeFormatter.ISO_DATE))
+                    .addString("endDate", LocalDateTime.now().format(DateTimeFormatter.ISO_DATE))
+                    .addLong("timestamp", System.currentTimeMillis()) // 매번 다른 timestamp로 고유 실행
+                    .toJobParameters());
+
+        } catch (JobExecutionAlreadyRunningException | JobRestartException e) {
+            System.err.println("Job이 이미 실행 중이거나 재시작할 수 없습니다: " + e.getMessage());
+        } catch (Exception e) {
+            System.err.println("Job 실행 중 예외 발생: " + e.getMessage());
+        }
+        long endTime = System.currentTimeMillis();  // 종료 시간 기록
+          long executionTime = endTime - startTime;   // 실행 시간 계산
+
+          System.out.println("Monthly Statistics Job Execution Time: " + executionTime + " ms");
+    }
 //
 //
 //      @Scheduled(initialDelay = 5000, fixedRate = Long.MAX_VALUE)

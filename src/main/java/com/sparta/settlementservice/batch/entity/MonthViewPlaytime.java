@@ -34,4 +34,13 @@ public class MonthViewPlaytime {
         this.totalViewCount = totalViewCount;
         this.totalPlayTime = totalPlayTime;
     }
+
+    public MonthViewPlaytime(Long videoId, LocalDate localDate, LocalDate localDate1, long l, long l1, long l2) {
+        this.videoId = videoId;
+        this.startDate = localDate;
+        this.endDate = localDate1;
+        this.totalViewCount = l;
+        this.totalPlayTime = l1;
+        this.totalAdViewCount = l;
+    }
 }

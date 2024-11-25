@@ -4,6 +4,7 @@ package com.sparta.settlementservice.batch.settlementbatch;
 import com.sparta.settlementservice.batch.entity.MonthViewPlaytime;
 import com.sparta.settlementservice.batch.repo.MonthViewPlaytimeRepository;
 import com.sparta.settlementservice.entity.DailyVideoView;
+import com.sparta.settlementservice.repository.DailyVideoViewRepository;
 import org.springframework.batch.core.Job;
 import org.springframework.batch.core.Step;
 import org.springframework.batch.core.configuration.annotation.JobScope;
@@ -12,6 +13,7 @@ import org.springframework.batch.core.job.builder.JobBuilder;
 import org.springframework.batch.core.repository.JobRepository;
 import org.springframework.batch.core.step.builder.StepBuilder;
 import org.springframework.batch.item.ItemProcessor;
+import org.springframework.batch.item.ItemReader;
 import org.springframework.batch.item.ItemWriter;
 import org.springframework.batch.item.database.JdbcCursorItemReader;
 import org.springframework.batch.item.database.builder.JdbcCursorItemReaderBuilder;
@@ -24,6 +26,10 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.transaction.PlatformTransactionManager;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 @Configuration
 public class MonthStaticBatch {
@@ -31,17 +37,17 @@ public class MonthStaticBatch {
     private final JobRepository jobRepository;
     private final PlatformTransactionManager platformTransactionManager;
     private final MonthViewPlaytimeRepository monthViewPlaytimeRepository;
-    private final JdbcTemplate jdbcTemplate;
+    private final DailyVideoViewRepository dailyVideoViewRepository;
 
     @Autowired
     public MonthStaticBatch(JobRepository jobRepository,
                             PlatformTransactionManager platformTransactionManager,
                             MonthViewPlaytimeRepository monthViewPlaytimeRepository,
-                            JdbcTemplate jdbcTemplate) {
+                            DailyVideoViewRepository dailyVideoViewRepository) {
         this.jobRepository = jobRepository;
         this.platformTransactionManager = platformTransactionManager;
         this.monthViewPlaytimeRepository = monthViewPlaytimeRepository;
-        this.jdbcTemplate = jdbcTemplate;
+        this.dailyVideoViewRepository = dailyVideoViewRepository;
     }
 
     // Job 구성
@@ -57,66 +63,94 @@ public class MonthStaticBatch {
     @JobScope
     public Step monthlyStatisticsStep() {
         return new StepBuilder("monthlyStatisticsStep", jobRepository)
-                .<DailyVideoView, MonthViewPlaytime>chunk(5000, platformTransactionManager) // chunk 크기 설정
+                .<DailyVideoView, MonthViewPlaytime>chunk(100, platformTransactionManager) // 청크 크기 조정
                 .reader(monthlyStatisticsReader())
                 .processor(monthlyStatisticsProcessor())
                 .writer(monthlyStatisticsWriter())
-                .taskExecutor(taskExecutor()) // 멀티스레드 적용
                 .build();
-    }
-
-    // TaskExecutor 설정 (멀티스레드 적용)
-    @Bean
-    public TaskExecutor taskExecutor() {
-        SimpleAsyncTaskExecutor executor = new SimpleAsyncTaskExecutor("monthlyStatisticsExecutor-");
-        executor.setConcurrencyLimit(10);  // 10개 스레드로 제한
-        return executor;
     }
 
     // Reader 구성
     @Bean
     @StepScope
-    public JdbcCursorItemReader<DailyVideoView> monthlyStatisticsReader() {
-        // 오늘 날짜를 기준으로 해당 월의 첫 날과 마지막 날 계산
-        LocalDate today = LocalDate.now();
-        LocalDate startDate = today.withDayOfMonth(1);  // 이번 달의 첫 날
-        LocalDate endDate = today.withDayOfMonth(today.lengthOfMonth()); // 이번 달의 마지막 날
+    public ItemReader<DailyVideoView> monthlyStatisticsReader() {
+        return new ItemReader<>() {
+            private List<DailyVideoView> dailyVideoViews;
+            private int nextIndex;
 
-        return new JdbcCursorItemReaderBuilder<DailyVideoView>()
-                .name("monthlyStatisticsReader")
-                .dataSource(jdbcTemplate.getDataSource())
-                .sql("SELECT * FROM daily_video_view WHERE date BETWEEN ? AND ? ORDER BY video_id")
-                .beanRowMapper(DailyVideoView.class)
-                .preparedStatementSetter(ps -> {
-                    ps.setDate(1, java.sql.Date.valueOf(startDate));
-                    ps.setDate(2, java.sql.Date.valueOf(endDate));
-                })
-                .build();
+            @Override
+            public DailyVideoView read() throws Exception {
+                if (dailyVideoViews == null) {
+                    LocalDate today = LocalDate.now();
+                    LocalDate startDate = today.withDayOfMonth(1);
+                    LocalDate endDate = today.withDayOfMonth(today.lengthOfMonth());
+
+                    // JPA Repository 호출
+                    dailyVideoViews = dailyVideoViewRepository.findByDateBetween(startDate, endDate);
+                    nextIndex = 0;
+                }
+
+                if (nextIndex < dailyVideoViews.size()) {
+                    return dailyVideoViews.get(nextIndex++);
+                }
+                return null; // 모든 데이터 읽기 완료
+            }
+        };
     }
 
     // Processor 구성
+    // Processor 수정
     @Bean
     public ItemProcessor<DailyVideoView, MonthViewPlaytime> monthlyStatisticsProcessor() {
-        return dailyVideoView -> {
-            MonthViewPlaytime monthlyStat = new MonthViewPlaytime();
-            monthlyStat.setVideoId(dailyVideoView.getVideoId());
-            monthlyStat.setStartDate(dailyVideoView.getDate().withDayOfMonth(1)); // 해당 월의 첫 날
-            monthlyStat.setEndDate(dailyVideoView.getDate().withDayOfMonth(dailyVideoView.getDate().lengthOfMonth())); // 해당 월의 마지막 날
-            monthlyStat.setTotalViewCount(dailyVideoView.getViewCount());
-            monthlyStat.setTotalAdViewCount(dailyVideoView.getAdViewCount());  // 광고 조회수 추가
-            monthlyStat.setTotalPlayTime(dailyVideoView.getPlayTime());
+        // videoId별 데이터를 그룹화하기 위한 Map
+        Map<Long, MonthViewPlaytime> groupedStats = new HashMap<>();
 
-            return monthlyStat;
+        return dailyVideoView -> {
+            Long videoId = dailyVideoView.getVideoId();
+
+            // Map에 없는 경우 초기화
+            groupedStats.putIfAbsent(videoId, new MonthViewPlaytime(
+                    videoId,
+                    dailyVideoView.getDate().withDayOfMonth(1),  // 해당 월의 첫 날
+                    dailyVideoView.getDate().withDayOfMonth(dailyVideoView.getDate().lengthOfMonth()),  // 해당 월의 마지막 날
+                    0L, 0L, 0L // 초기 값
+            ));
+
+            // 기존 데이터 가져와 합산
+            MonthViewPlaytime stat = groupedStats.get(videoId);
+            stat.setTotalViewCount(stat.getTotalViewCount() + dailyVideoView.getViewCount());
+            stat.setTotalAdViewCount(stat.getTotalAdViewCount() + dailyVideoView.getAdViewCount());
+            stat.setTotalPlayTime(stat.getTotalPlayTime() + dailyVideoView.getPlayTime());
+
+            // 현재 아이템에 해당하는 결과 반환
+            return stat;
         };
     }
+
+
 
     // Writer 구성
     @Bean
     public ItemWriter<MonthViewPlaytime> monthlyStatisticsWriter() {
         return items -> {
             for (MonthViewPlaytime stat : items) {
-                // 월별 통계 데이터를 저장
-                monthViewPlaytimeRepository.save(stat);
+                // DB에 기존 데이터가 있는지 확인
+                MonthViewPlaytime existingStat = monthViewPlaytimeRepository.findByVideoIdAndStartDateAndEndDate(
+                        stat.getVideoId(),
+                        stat.getStartDate(),
+                        stat.getEndDate()
+                );
+
+                if (existingStat != null) {
+                    // 기존 데이터가 있다면 값 누적
+                    existingStat.setTotalViewCount(existingStat.getTotalViewCount() + stat.getTotalViewCount());
+                    existingStat.setTotalAdViewCount(existingStat.getTotalAdViewCount() + stat.getTotalAdViewCount());
+                    existingStat.setTotalPlayTime(existingStat.getTotalPlayTime() + stat.getTotalPlayTime());
+                    monthViewPlaytimeRepository.save(existingStat);
+                } else {
+                    // 기존 데이터가 없으면 새로 삽입
+                    monthViewPlaytimeRepository.save(stat);
+                }
             }
         };
     }
