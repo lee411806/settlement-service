@@ -34,4 +34,10 @@ public interface DailyVideoViewRepository extends JpaRepository<DailyVideoView, 
     List<DailyVideoView> findTop5ByDateBetweenOrderByPlayTimeDesc(LocalDate startDate, LocalDate endDate);
 
     List<DailyVideoView> findByDateBetween(LocalDate startDate, LocalDate endDate);
+
+    // LIMIT을 적용한 메서드
+    @Query("SELECT d FROM DailyVideoView d WHERE d.date = :date")
+    List<DailyVideoView> findByDateWithLimit(@Param("date") LocalDate date, Pageable pageable);
+
+    List<DailyVideoView> findByVideoIdBetween(long lowerBound, long upperBound, Pageable pageable);
 }
