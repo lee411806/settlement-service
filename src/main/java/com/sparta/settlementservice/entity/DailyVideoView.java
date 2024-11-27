@@ -12,6 +12,10 @@ import java.time.LocalDate;
 @Getter
 @Setter
 @NoArgsConstructor
+@Table(
+        name = "daily_video_view",
+        indexes = @Index(name = "idx_video_id", columnList = "videoId") // videoId에 인덱스 추가
+)
 public class DailyVideoView {
 
     @Id

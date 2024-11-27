@@ -130,7 +130,7 @@ public class DailyTop5Batch {
     }
 
     // Writer 구성
-    @Bean
+    @Bean(name = "dailyStaticTop5Writer")
     public ItemWriter<Statistics> dailyStatisticsWriter() {
         return items -> {
             items.forEach(stat -> System.out.println("Log Writer - Saving to Statistics: VideoId: " + stat.getVideoId() + ", StatType: " + stat.getStatType() + ", ViewCount: " + stat.getViewCount() + ", PlayTime: " + stat.getPlayTime()));
