@@ -12,16 +12,11 @@ public class VideoIdPartitioner implements Partitioner {
         Map<String, ExecutionContext> partitionMap = new HashMap<>();
         long minVideoId = 1;  // videoId 최소 값
         long maxVideoId = 4000; // videoId 최대 값
-
         long partitionSize = (maxVideoId - minVideoId + 1) / gridSize;
 
         for (int i = 0; i < gridSize; i++) {
             long lowerBound = minVideoId + (i * partitionSize);
             long upperBound = (i == gridSize - 1) ? maxVideoId : (lowerBound + partitionSize - 1);
-
-
-            // 로그 추가
-            System.out.println("Partition " + i + ": lowerBound = " + lowerBound + ", upperBound = " + upperBound);
 
             ExecutionContext context = new ExecutionContext();
             context.putLong("lowerBound", lowerBound);
@@ -29,7 +24,6 @@ public class VideoIdPartitioner implements Partitioner {
 
             partitionMap.put("partition" + i, context);
         }
-
         return partitionMap;
     }
 }

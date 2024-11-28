@@ -15,24 +15,17 @@ import org.springframework.batch.core.partition.support.Partitioner;
 import org.springframework.batch.core.partition.support.TaskExecutorPartitionHandler;
 import org.springframework.batch.core.repository.JobRepository;
 import org.springframework.batch.core.step.builder.StepBuilder;
-import org.springframework.batch.item.ExecutionContext;
 import org.springframework.batch.item.ItemProcessor;
 import org.springframework.batch.item.ItemReader;
 import org.springframework.batch.item.ItemWriter;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
-import org.springframework.core.task.SimpleAsyncTaskExecutor;
+import org.springframework.context.annotation.*;
 import org.springframework.core.task.TaskExecutor;
 import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
+import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.transaction.PlatformTransactionManager;
 
-import java.time.LocalDate;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
-import java.util.Optional;
 
 @Configuration
 public class DailyStaticBatch {
@@ -57,142 +50,150 @@ public class DailyStaticBatch {
     @Bean
     public Job dailyStatisticsJob() {
         return new JobBuilder("dailyStatisticsJob", jobRepository)
-                .start(dailyStatisticsStep())  // 하나의 Step으로 처리
+                .start(partitionedDailyStatisticsStep()) // 파티션 Step 실행
+                .build();
+    }
+
+
+    @Bean
+    public Partitioner videoIdPartitioner() {
+        return new VideoIdPartitioner(); // 너가 작성한 Partitioner
+    }
+
+    //TaskExecutor 빈이 하나로만 정의되어 있지만, 파티셔닝을 이용해서
+    // 병렬 처리를 하도록 설정하는 것이므로 TaskExecutor가 여러 개로 인식되는 문제는 @Primary 어노테이션으로 해결이 가능
+    @Primary
+    @Bean
+    public TaskExecutor taskExecutor() {
+        ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
+        executor.setCorePoolSize(4); // 최소 4개의 스레드
+        executor.setMaxPoolSize(8);  // 최대 8개의 스레드
+        executor.setQueueCapacity(100); // 대기 큐의 크기
+        executor.setThreadNamePrefix("batch-executor-");
+        executor.initialize();
+        return executor;
+    }
+
+    @Bean
+    public PartitionHandler partitionHandler(TaskExecutor taskExecutor) {
+        TaskExecutorPartitionHandler partitionHandler = new TaskExecutorPartitionHandler();
+        partitionHandler.setTaskExecutor(taskExecutor); // 병렬 처리할 TaskExecutor 지정
+        partitionHandler.setStep(dailyStatisticsStep()); // 각 파티션에 대해 실행할 Step 지정
+        partitionHandler.setGridSize(4); // 병렬 처리 수 (4개의 파티션)
+        return partitionHandler;
+    }
+
+    //파티션 나눔
+    @Bean
+    @JobScope
+    public Step partitionedDailyStatisticsStep() {
+        return new StepBuilder("partitionedDailyStatisticsStep", jobRepository)
+                .partitioner("dailyStatisticsStep", videoIdPartitioner()) // 파티션 설정
+                .step(dailyStatisticsStep()) // 기존 Step 재사용
+                .partitionHandler(partitionHandler(taskExecutor())) // 병렬 처리 핸들러 추가
+                .gridSize(4) // 병렬 처리 수 (4개의 파티션)
                 .build();
     }
 
     // Step 구성
     @Bean
-    @JobScope
+    @StepScope// JobScope 대신 StepScope로 변경
+    @Scope(proxyMode = ScopedProxyMode.TARGET_CLASS) // 프록시로 처리
     public Step dailyStatisticsStep() {
         return new StepBuilder("dailyStatisticsStep", jobRepository)
-                .partitioner("dailyStatisticsPartitioner", partitioner()) // 파티셔닝 추가
-                .step(dailyStatisticsSubStep()) // 하위 Step 실행
-                .gridSize(4) // 4개의 파티션으로 나누어 처리
-                .taskExecutor(partitionTaskExecutor()) // 병렬 실행을 위한 TaskExecutor
+                .<DailyVideoView, DailyViewPlaytime>chunk(1000, platformTransactionManager) // 데이터를 청크 단위로 처리
+                .reader(dailyStatisticsReader())
+                .processor(dailyStatisticsProcessor())
+                .writer(dailyStatisticsWriter())
                 .build();
     }
 
-    @Bean
-    public Step dailyStatisticsSubStep() {
-        return new StepBuilder("dailyStatisticsSubStep", jobRepository)
-                .<DailyVideoView, DailyViewPlaytime>chunk(1000, platformTransactionManager)
-                .reader(dailyStatisticsReader()) // 기존 Reader
-                .processor(dailyStatisticsProcessor()) // 기존 Processor
-                .writer(dailyStatisticsWriter()) // 기존 Writer
-                .build();
-    }
-    @Bean
-    public Partitioner partitioner() {
-        return new Partitioner() {
-            @Override
-            public Map<String, ExecutionContext> partition(int gridSize) {
-                Map<String, ExecutionContext> partitionMap = new HashMap<>();
-
-                // 비디오 ID의 최소 및 최대 범위 설정
-                long minVideoId = 1;  // 비디오 ID 최소값
-                long maxVideoId = 4000; // 비디오 ID 최대값
-
-                // 각 파티션이 담당할 범위 크기 계산
-                long partitionSize = (maxVideoId - minVideoId + 1) / gridSize;
-
-                // 각 파티션에 고유한 lowerBound와 upperBound 할당
-                for (int i = 0; i < gridSize; i++) {
-                    long lowerBound = minVideoId + (i * partitionSize);
-                    long upperBound = (i == gridSize - 1) ? maxVideoId : (lowerBound + partitionSize - 1);
-
-                    ExecutionContext context = new ExecutionContext();
-                    context.putLong("lowerBound", lowerBound);
-                    context.putLong("upperBound", upperBound);
-
-                    // 파티션 맵에 추가
-                    partitionMap.put("partition" + i, context);
-
-                    // 각 파티션 범위 로그 확인
-                    System.out.println("Partition " + i + ": Lower Bound = " + lowerBound + ", Upper Bound = " + upperBound);
-                }
-
-                return partitionMap;
-            }
-        };
-    }
-
-    @Bean
-    public TaskExecutor partitionTaskExecutor() {
-        SimpleAsyncTaskExecutor taskExecutor = new SimpleAsyncTaskExecutor();
-        taskExecutor.setConcurrencyLimit(4); // 병렬 실행 스레드 개수
-        return taskExecutor;
-    }
-
-
-
-    // ItemReader 구성 (한 번에 1000개씩 읽기)
+    // Reader: 데이터 읽기
     @Bean
     @StepScope
     public ItemReader<DailyVideoView> dailyStatisticsReader() {
         return new ItemReader<DailyVideoView>() {
+            private Long lastProcessedId = 0L;
+            private static final int PAGE_SIZE = 1000;
             private List<DailyVideoView> currentPageData;
             private int nextIndex = 0;
-            private int currentPage = 0;
-            private static final int PAGE_SIZE = 1000;
 
             @Override
             public DailyVideoView read() throws Exception {
-                // 데이터가 없으면 새 페이지 데이터를 가져오고, 없으면 null 반환
+                // 현재 페이지 데이터를 모두 소진하면 다음 페이지로 이동
                 if (currentPageData == null || nextIndex >= currentPageData.size()) {
-                    Pageable pageable = PageRequest.of(currentPage++, PAGE_SIZE);
-                    currentPageData = dailyVideoViewRepository.findByDateWithLimit(LocalDate.of(2024, 11, 1), pageable);
+                    currentPageData = dailyVideoViewRepository.findByVideoIdGreaterThanOrderByVideoId(
+                            lastProcessedId, PageRequest.of(0, PAGE_SIZE)
+                    );
 
                     if (currentPageData.isEmpty()) {
-                        return null;
+                        return null; // 더 이상 데이터가 없을 경우 종료
                     }
-                    nextIndex = 0;  // 새 페이지 시작점으로 초기화
+
+                    lastProcessedId = currentPageData.get(currentPageData.size() - 1).getVideoId();
+                    nextIndex = 0;
                 }
 
+                // 다음 데이터를 반환
                 return currentPageData.get(nextIndex++);
             }
         };
     }
 
-
-    // ItemProcessor 구성 (데이터 처리)
     @Bean
     public ItemProcessor<DailyVideoView, DailyViewPlaytime> dailyStatisticsProcessor() {
         return dailyVideoView -> {
-            // 처리된 데이터 반환
-            return new DailyViewPlaytime(
-                    dailyVideoView.getVideoId(),
-                    dailyVideoView.getDate(),
-                    dailyVideoView.getViewCount(),
-                    dailyVideoView.getAdViewCount(),
-                    dailyVideoView.getPlayTime()
+            if (dailyVideoView == null) {
+                return null;
+            }
+
+            // 기존 데이터 조회 (videoId 기준)
+            List<DailyViewPlaytime> existingDataList = dailyViewPlaytimeRepository.findByVideoId(
+                    dailyVideoView.getVideoId() // 이제 date 기준을 빼고 videoId만 사용
             );
-        };
-    }
 
-    // ItemWriter 구성 (기존 데이터 확인 후 합산 또는 새로 저장)
-    @Bean
-    public ItemWriter<DailyViewPlaytime> dailyStatisticsWriter() {
-        return items -> {
-            for (DailyViewPlaytime stat : items) {
-                // 기존 데이터 조회 (여러 개의 결과를 반환)
-                List<DailyViewPlaytime> existingStats = dailyViewPlaytimeRepository.findByVideoIdAndDate(stat.getVideoId(), stat.getDate());
+            if (existingDataList != null && !existingDataList.isEmpty()) {
+                // 여러 개의 데이터가 있으면 합산 (기존 데이터를 갱신)
+                DailyViewPlaytime existingData = existingDataList.get(0); // 첫 번째 요소만 사용
+                existingData.setTotalViewCount(existingData.getTotalViewCount() + dailyVideoView.getViewCount());
+                existingData.setTotalAdViewCount(existingData.getTotalAdViewCount() + dailyVideoView.getAdViewCount());
+                existingData.setTotalPlayTime(existingData.getTotalPlayTime() + dailyVideoView.getPlayTime());
 
-                if (existingStats != null && !existingStats.isEmpty()) {
-                    // 기존 데이터와 합산
-                    for (DailyViewPlaytime existingStat : existingStats) {
-                        existingStat.setTotalViewCount(existingStat.getTotalViewCount() + stat.getTotalViewCount());
-                        existingStat.setTotalAdViewCount(existingStat.getTotalAdViewCount() + stat.getTotalAdViewCount());
-                        existingStat.setTotalPlayTime(existingStat.getTotalPlayTime() + stat.getTotalPlayTime());
-                    }
-                    // 모든 합산된 데이터를 저장
-                    dailyViewPlaytimeRepository.saveAll(existingStats);
-                } else {
-                    // 새 데이터 삽입
-                    dailyViewPlaytimeRepository.save(stat);
-                }
+                System.out.println("Processor updated existing data for videoId: " + dailyVideoView.getVideoId());
+                return existingData;
+            } else {
+                // 새 데이터 생성
+                DailyViewPlaytime newData = new DailyViewPlaytime(
+                        dailyVideoView.getVideoId(),
+                        dailyVideoView.getDate(),
+                        dailyVideoView.getViewCount(),
+                        dailyVideoView.getAdViewCount(),
+                        dailyVideoView.getPlayTime()
+                );
+
+                System.out.println("Processor created new data for videoId: " + dailyVideoView.getVideoId());
+                return newData;
             }
         };
     }
 
+
+    // Writer: 데이터 저장
+    @Bean
+    public ItemWriter<DailyViewPlaytime> dailyStatisticsWriter() {
+        return items -> {
+            if (items.isEmpty()) {
+                System.out.println("Writer: No data to write.");
+                return;
+            }
+
+            System.out.println("Writer: Writing " + items.size() + " items.");
+            for (DailyViewPlaytime item : items) {
+                // 데이터베이스에 저장 전에 중복 확인
+                if (!dailyViewPlaytimeRepository.existsByVideoIdAndDate(item.getVideoId(), item.getDate())) {
+                    dailyViewPlaytimeRepository.save(item); // 중복되지 않으면 저장
+                }
+            }
+        };
+    }
 }
