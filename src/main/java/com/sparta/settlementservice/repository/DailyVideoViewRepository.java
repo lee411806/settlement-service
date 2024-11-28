@@ -3,6 +3,7 @@ package com.sparta.settlementservice.repository;
 
 import com.sparta.settlementservice.entity.DailyVideoView;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -40,4 +41,8 @@ public interface DailyVideoViewRepository extends JpaRepository<DailyVideoView, 
     List<DailyVideoView> findByDateWithLimit(@Param("date") LocalDate date, Pageable pageable);
 
     List<DailyVideoView> findByVideoIdBetween(long lowerBound, long upperBound, Pageable pageable);
+
+    List<DailyVideoView> findByVideoIdGreaterThan(Long lastVideoId, PageRequest of);
+
+    List<DailyVideoView> findByVideoIdGreaterThanOrderByVideoId(Long lastProcessedId, PageRequest of);
 }
