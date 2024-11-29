@@ -45,4 +45,6 @@ public interface DailyVideoViewRepository extends JpaRepository<DailyVideoView, 
     List<DailyVideoView> findByVideoIdGreaterThan(Long lastVideoId, PageRequest of);
 
     List<DailyVideoView> findByVideoIdGreaterThanOrderByVideoId(Long lastProcessedId, PageRequest of);
+
+    List<DailyVideoView> findByVideoIdBetweenOrderByVideoId(Long lastProcessedId, Long upperBound, PageRequest of);
 }
