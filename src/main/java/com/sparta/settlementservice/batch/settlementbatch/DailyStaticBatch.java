@@ -1,5 +1,7 @@
 package com.sparta.settlementservice.batch.settlementbatch;
 
+import com.sparta.settlementservice.batch.config.TimedJobExecutionListener;
+import com.sparta.settlementservice.batch.config.TimedStepListener;
 import com.sparta.settlementservice.batch.config.VideoIdPartitioner;
 import com.sparta.settlementservice.batch.entity.DailyViewPlaytime;
 import com.sparta.settlementservice.batch.repo.DailyViewPlaytimeRepository;
@@ -19,6 +21,7 @@ import org.springframework.batch.item.ItemProcessor;
 import org.springframework.batch.item.ItemReader;
 import org.springframework.batch.item.ItemWriter;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.*;
 import org.springframework.core.task.TaskExecutor;
 import org.springframework.data.domain.PageRequest;
@@ -49,6 +52,7 @@ public class DailyStaticBatch {
     // Job 구성
     @Bean
     public Job dailyStatisticsJob() {
+        System.out.println("[Job] Starting 'dailyStatisticsJob'");
         return new JobBuilder("dailyStatisticsJob", jobRepository)
                 .start(partitionedDailyStatisticsStep()) // 파티션 Step 실행
                 .build();
@@ -57,6 +61,7 @@ public class DailyStaticBatch {
 
     @Bean
     public Partitioner videoIdPartitioner() {
+        System.out.println("[Partitioner] Initialized VideoIdPartitioner");
         return new VideoIdPartitioner(); // 너가 작성한 Partitioner
     }
 
@@ -87,6 +92,7 @@ public class DailyStaticBatch {
     @Bean
     @JobScope
     public Step partitionedDailyStatisticsStep() {
+        System.out.println("[Step] Starting 'partitionedDailyStatisticsStep'");
         return new StepBuilder("partitionedDailyStatisticsStep", jobRepository)
                 .partitioner("dailyStatisticsStep", videoIdPartitioner()) // 파티션 설정
                 .step(dailyStatisticsStep()) // 기존 Step 재사용
@@ -97,44 +103,64 @@ public class DailyStaticBatch {
 
     // Step 구성
     @Bean
-    @StepScope// JobScope 대신 StepScope로 변경
-    @Scope(proxyMode = ScopedProxyMode.TARGET_CLASS) // 프록시로 처리
+    @StepScope
+    @Scope(proxyMode = ScopedProxyMode.TARGET_CLASS)
     public Step dailyStatisticsStep() {
         return new StepBuilder("dailyStatisticsStep", jobRepository)
-                .<DailyVideoView, DailyViewPlaytime>chunk(1000, platformTransactionManager) // 데이터를 청크 단위로 처리
-                .reader(dailyStatisticsReader())
+                .<DailyVideoView, DailyViewPlaytime>chunk(1000, platformTransactionManager)
+                .reader(dailyStatisticsReader(null, null)) // Reader는 ExecutionContext에서 값 주입
                 .processor(dailyStatisticsProcessor())
                 .writer(dailyStatisticsWriter())
                 .build();
     }
-
+    @Bean
+    public Job timedJob(TimedJobExecutionListener timedJobExecutionListener) {
+        return new JobBuilder("timedJob", jobRepository)
+                .listener(timedJobExecutionListener) // Job Listener 등록
+                .start(partitionedDailyStatisticsStep())
+                .build();
+    }
+    @Bean
+    @JobScope
+    public Step partitionedDailyStatisticsStepWithLogging(TimedStepListener timedStepListener) {
+        return new StepBuilder("partitionedDailyStatisticsStep", jobRepository)
+                .partitioner("dailyStatisticsStep", videoIdPartitioner()) // 파티션 설정
+                .step(dailyStatisticsStep()) // Step 재사용
+                .listener(timedStepListener) // Step Listener 등록
+                .partitionHandler(partitionHandler(taskExecutor())) // 병렬 처리 핸들러
+                .build();
+    }
     // Reader: 데이터 읽기
     @Bean
     @StepScope
-    public ItemReader<DailyVideoView> dailyStatisticsReader() {
+    public ItemReader<DailyVideoView> dailyStatisticsReader(
+            @Value("#{stepExecutionContext['lowerBound']}") Long lowerBound,
+            @Value("#{stepExecutionContext['upperBound']}") Long upperBound) {
+
+        System.out.println("[Reader] Initialized with lowerBound=" + lowerBound + ", upperBound=" + upperBound);
+
         return new ItemReader<DailyVideoView>() {
-            private Long lastProcessedId = 0L;
+            private Long lastProcessedId = lowerBound; // lowerBound로 초기화
             private static final int PAGE_SIZE = 1000;
             private List<DailyVideoView> currentPageData;
             private int nextIndex = 0;
 
             @Override
             public DailyVideoView read() throws Exception {
-                // 현재 페이지 데이터를 모두 소진하면 다음 페이지로 이동
                 if (currentPageData == null || nextIndex >= currentPageData.size()) {
-                    currentPageData = dailyVideoViewRepository.findByVideoIdGreaterThanOrderByVideoId(
-                            lastProcessedId, PageRequest.of(0, PAGE_SIZE)
+                    System.out.println("[Reader] Fetching data between " + lastProcessedId + " and " + upperBound);
+
+                    currentPageData = dailyVideoViewRepository.findByVideoIdBetweenOrderByVideoId(
+                            lastProcessedId, upperBound, PageRequest.of(0, PAGE_SIZE)
                     );
 
                     if (currentPageData.isEmpty()) {
-                        return null; // 더 이상 데이터가 없을 경우 종료
+                        return null; // 더 이상 데이터가 없으면 종료
                     }
 
                     lastProcessedId = currentPageData.get(currentPageData.size() - 1).getVideoId();
                     nextIndex = 0;
                 }
-
-                // 다음 데이터를 반환
                 return currentPageData.get(nextIndex++);
             }
         };
