@@ -46,6 +46,14 @@ public class DailyVideoView {
         this.date = today;
     }
 
+    // 생성자
+    public DailyVideoView(Long videoId, Long viewCount, Long adViewCount, Long playTime) {
+        this.videoId = videoId;
+        this.viewCount = viewCount;
+        this.adViewCount = adViewCount;
+        this.playTime = playTime;
+    }
+
     // 조회수 증가 메서드
     public void incrementViewCount() {
         this.viewCount += 1;

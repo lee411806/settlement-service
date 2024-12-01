@@ -24,8 +24,6 @@ public class StatisticsSchedule {
         this.jobRegistry = jobRegistry;
     }
 
-
-
     // Daily Static 배치 처리
     @Scheduled(initialDelay = 5000, fixedRate = Long.MAX_VALUE) // 스케줄러 설정
     public void runDailyStatisticsJob() {

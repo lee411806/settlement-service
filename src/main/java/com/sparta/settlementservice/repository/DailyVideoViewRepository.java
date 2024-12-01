@@ -1,6 +1,7 @@
 package com.sparta.settlementservice.repository;
 
 
+import com.sparta.settlementservice.batch.entity.DailyViewPlaytime;
 import com.sparta.settlementservice.entity.DailyVideoView;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -23,11 +24,8 @@ public interface DailyVideoViewRepository extends JpaRepository<DailyVideoView, 
     // 주어진 날짜 범위(startDate ~ endDate) 내에서 조회수가 높은 상위 5개의 DailyVideoView 데이터를 조회 (내림차순 정렬)
     List<DailyVideoView> findTop5ByDateBetweenOrderByViewCountDesc(LocalDate startDate, LocalDate endDate);
 
-    // 특정 날짜(playedDate)에 해당하는 모든 DailyVideoView 데이터를 조회
-    List<DailyVideoView> findAllByDate(LocalDate playedDate);
-
-    // 주어진 날짜 범위(startDate ~ endDate)에 해당하는 모든 DailyVideoView 데이터를 조회
-    List<DailyVideoView> findAllByDateBetween(LocalDate startDate, LocalDate endDate);
+    @Query(value = "SELECT * FROM daily_view_playtime WHERE video_id = :videoId", nativeQuery = true)
+    List<DailyViewPlaytime> findByVideoIdNative(@Param("videoId") Long videoId);
 
     @Query("SELECT d FROM DailyVideoView d WHERE d.date = :date")
     List<DailyVideoView> findByDate(@Param("date") LocalDate date);
@@ -36,15 +34,6 @@ public interface DailyVideoViewRepository extends JpaRepository<DailyVideoView, 
 
     List<DailyVideoView> findByDateBetween(LocalDate startDate, LocalDate endDate);
 
-    // LIMIT을 적용한 메서드
-    @Query("SELECT d FROM DailyVideoView d WHERE d.date = :date")
-    List<DailyVideoView> findByDateWithLimit(@Param("date") LocalDate date, Pageable pageable);
-
-    List<DailyVideoView> findByVideoIdBetween(long lowerBound, long upperBound, Pageable pageable);
-
-    List<DailyVideoView> findByVideoIdGreaterThan(Long lastVideoId, PageRequest of);
-
-    List<DailyVideoView> findByVideoIdGreaterThanOrderByVideoId(Long lastProcessedId, PageRequest of);
 
     List<DailyVideoView> findByVideoIdBetweenOrderByVideoId(Long lastProcessedId, Long upperBound, PageRequest of);
 }
