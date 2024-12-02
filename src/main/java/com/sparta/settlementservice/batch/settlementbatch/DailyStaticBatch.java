@@ -113,7 +113,7 @@ public class DailyStaticBatch {
     @Scope(proxyMode = ScopedProxyMode.TARGET_CLASS)
     public Step dailyStatisticsStep() {
         return new StepBuilder("dailyStatisticsStep", jobRepository)
-                .<DailyVideoView, DailyViewPlaytime>chunk(1000, platformTransactionManager)
+                .<DailyVideoView, DailyViewPlaytime>chunk(8000, platformTransactionManager)
                 .reader(dailyStatisticsReader(null, null,dailyViewPlaytimeJdbcRepository)) // Reader는 ExecutionContext에서 값 주입
                 .processor(dailyStatisticsProcessor())
                 .writer(dailyStatisticsWriter())
@@ -132,37 +132,34 @@ public class DailyStaticBatch {
 
         return new ItemReader<DailyVideoView>() {
             private Long lastProcessedId = lowerBound; // lowerBound로 초기화
-            private static final int PAGE_SIZE = 1000;
+            private static final int PAGE_SIZE = 8000;
             private List<DailyVideoView> currentPageData = new ArrayList<>();
             private int nextIndex = 0;
 
             @Override
             public DailyVideoView read() throws Exception {
-                // 종료 조건: lastProcessedId가 upperBound보다 크거나 같을 때
-                if (lastProcessedId >= upperBound && (currentPageData == null || nextIndex >= currentPageData.size())) {
-                    System.out.println("[Reader] LastProcessedId reached or exceeded upperBound. Terminating.");
+                // 종료 조건: Partition 범위 내 데이터를 모두 처리한 경우
+                if ((currentPageData.isEmpty() || nextIndex >= currentPageData.size()) && lastProcessedId > upperBound) {
+                    System.out.println("[Reader] All data processed for this partition. Terminating.");
                     return null;
                 }
 
-                // 현재 페이지 데이터를 모두 처리했을 경우
+                // 데이터를 모두 처리한 경우 새로운 데이터를 Fetch
                 if (currentPageData.isEmpty() || nextIndex >= currentPageData.size()) {
                     System.out.println("[Reader] Fetching data between " + lastProcessedId + " and " + upperBound);
 
-                    // 데이터 fetch
+                    // 데이터를 반복해서 Fetch하며, 같은 videoId를 끝까지 처리
                     currentPageData = jdbcRepository.findByVideoIdBetweenOrderByVideoId(
                             lastProcessedId, upperBound, PAGE_SIZE
                     );
 
-                    if (currentPageData.isEmpty()) {
-                        System.out.println("[Reader] No more data to fetch. Terminating.");
-                        return null;
+                    // Fetch한 데이터가 없으면 다음 videoId로 넘어가기
+                    if (!currentPageData.isEmpty()) {
+                        lastProcessedId = currentPageData.get(currentPageData.size() - 1).getVideoId() + 1;
                     }
 
-                    // lastProcessedId 업데이트 (마지막 항목의 videoId + 1)
-                    lastProcessedId = currentPageData.get(currentPageData.size() - 1).getVideoId() + 1;
-                    System.out.println("[Reader] Updated lastProcessedId to: " + lastProcessedId);
-
-                    nextIndex = 0; // 새로 가져온 데이터 페이지의 시작
+                    // Fetch한 데이터가 있으면 Index 초기화
+                    nextIndex = 0;
                 }
 
                 // 현재 데이터 반환
