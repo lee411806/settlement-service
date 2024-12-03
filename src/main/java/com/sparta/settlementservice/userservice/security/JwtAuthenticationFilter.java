@@ -2,9 +2,9 @@ package com.sparta.settlementservice.userservice.security;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import com.sparta.userservice.dto.LoginRequestDto;
-import com.sparta.userservice.entity.UserRoleEnum;
-import com.sparta.userservice.jwt.JwtUtil;
+import com.sparta.settlementservice.userservice.dto.LoginRequestDto;
+import com.sparta.settlementservice.userservice.entity.UserRoleEnum;
+import com.sparta.settlementservice.userservice.jwt.JwtUtil;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;

@@ -4,11 +4,11 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import com.sparta.userservice.dto.KakaoUserInfoDto;
-import com.sparta.userservice.entity.User;
-import com.sparta.userservice.entity.UserRoleEnum;
-import com.sparta.userservice.jwt.JwtUtil;
-import com.sparta.userservice.repository.UserRepository;
+import com.sparta.settlementservice.userservice.dto.KakaoUserInfoDto;
+import com.sparta.settlementservice.userservice.entity.User;
+import com.sparta.settlementservice.userservice.entity.UserRoleEnum;
+import com.sparta.settlementservice.userservice.jwt.JwtUtil;
+import com.sparta.settlementservice.userservice.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpHeaders;

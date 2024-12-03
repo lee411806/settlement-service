@@ -1,6 +1,7 @@
 package com.sparta.settlementservice.entity;
 
 
+import com.sparta.settlementservice.userservice.entity.Timestamped;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -19,7 +20,7 @@ import java.time.LocalDate;
         }
 )
 
-public class DailyVideoView {
+public class DailyVideoView{
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -40,6 +41,8 @@ public class DailyVideoView {
     private Long playTime = 0L;
 
     private String statType;
+
+
 
     public DailyVideoView(Long videoId, LocalDate today) {
         this.videoId = videoId;

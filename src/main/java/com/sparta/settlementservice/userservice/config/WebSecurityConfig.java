@@ -1,9 +1,9 @@
 package com.sparta.settlementservice.userservice.config;
 
-import com.sparta.userservice.jwt.JwtUtil;
-import com.sparta.userservice.security.JwtAuthenticationFilter;
-import com.sparta.userservice.security.JwtAuthorizationFilter;
-import com.sparta.userservice.security.UserDetailsServiceImpl;
+import com.sparta.settlementservice.userservice.jwt.JwtUtil;
+import com.sparta.settlementservice.userservice.security.JwtAuthenticationFilter;
+import com.sparta.settlementservice.userservice.security.JwtAuthorizationFilter;
+import com.sparta.settlementservice.userservice.security.UserDetailsServiceImpl;
 import lombok.RequiredArgsConstructor;
 import org.springframework.boot.autoconfigure.security.servlet.PathRequest;
 import org.springframework.context.annotation.Bean;

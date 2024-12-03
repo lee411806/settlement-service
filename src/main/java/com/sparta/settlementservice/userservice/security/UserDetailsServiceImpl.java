@@ -2,8 +2,8 @@ package com.sparta.settlementservice.userservice.security;
 
 
 
-import com.sparta.userservice.entity.User;
-import com.sparta.userservice.repository.UserRepository;
+import com.sparta.settlementservice.userservice.entity.User;
+import com.sparta.settlementservice.userservice.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
