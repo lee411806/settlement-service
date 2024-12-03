@@ -2,13 +2,13 @@ package com.sparta.settlementservice.service;
 
 import com.sparta.settlementservice.entity.DailyVideoView;
 import com.sparta.settlementservice.entity.VideoViewHistory;
-import com.sparta.settlementservice.entity.Videos;
 import com.sparta.settlementservice.repository.DailyVideoViewRepository;
 import com.sparta.settlementservice.repository.VideoRepository;
 import com.sparta.settlementservice.repository.VideoViewHistoryRepository;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -31,23 +31,10 @@ public class VideoViewHelper {
         dailyVideoViewRepository.save(dailyVideoView);
     }
 
-    // 새로운 시청 기록 생성
-    public int createNewHistory(Long userId, Long videoId) {
-        System.out.println("createNewHistory 메서드 실행 중 - userId: " + userId + ", videoId: " + videoId);
-
-        Videos video = videoRepository.findById(videoId)
-                .orElseThrow(() -> new IllegalArgumentException("Invalid video ID: " + videoId));
-
-        VideoViewHistory newHistory = new VideoViewHistory();
-        newHistory.setUserId(userId);
-        newHistory.setVideo(video);
-        newHistory.setCurrentPosition(0); // 초기 위치
-        newHistory.setLastPlayedDate(LocalDateTime.now());
-
-        videoViewHistoryRepository.save(newHistory);
-
-        System.out.println("VideoViewHistory 저장 완료 - userId: " + newHistory.getUserId());
-        return 0; // 새로 생성되었으므로 0초 반환
+    @Transactional
+    public int createOrUpdateHistory(Long videoId) {
+        dailyVideoViewRepository.upsertVideoViewHistory(videoId);
+        return 0; // 시청 기록이 생성되었거나 업데이트되었음을 반환
     }
 
     // 재생 시간 업데이트

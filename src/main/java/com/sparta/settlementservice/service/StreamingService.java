@@ -32,7 +32,7 @@ public class StreamingService {
     private final JwtUtil jwtUtil;
 
     // 동영상 재생 서비스
-    public int play(Long userId, Long videoId, HttpServletRequest httpServletRequest) {
+    public int play(Long videoId, HttpServletRequest httpServletRequest) {
         String jwtToken = jwtUtil.getJwtFromHeader(httpServletRequest);
         String ipAddress = ipHelper.getClientIp(httpServletRequest); // 헬퍼 사용
 
@@ -40,7 +40,7 @@ public class StreamingService {
             System.out.println("어뷰징입니다.");
             return 0;
         } else {
-            return videoViewHelper.createNewHistory(userId, videoId); // 헬퍼로 시청 기록 생성
+            return videoViewHelper.createOrUpdateHistory(videoId); // 헬퍼로 시청 기록 생성
         }
     }
 

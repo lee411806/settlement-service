@@ -20,7 +20,7 @@ public class StreamingController {
     public int play(@PathVariable Long videoId
                     ,@RequestBody PlayRequestDto playRequestDto
                     ,HttpServletRequest httpServletRequest) {
-              return streamingService.play(playRequestDto.getUserId(), videoId,httpServletRequest);
+              return streamingService.play(videoId,httpServletRequest);
     }
 
     // 현재 재생 시점 db에 저장
