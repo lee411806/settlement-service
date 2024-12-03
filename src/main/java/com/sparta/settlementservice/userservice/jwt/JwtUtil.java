@@ -1,7 +1,7 @@
 package com.sparta.settlementservice.userservice.jwt;
 
 
-import com.sparta.userservice.entity.UserRoleEnum;
+import com.sparta.settlementservice.userservice.entity.UserRoleEnum;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;
 import jakarta.annotation.PostConstruct;
@@ -67,6 +67,8 @@ public class JwtUtil {
         return null;
     }
 
+
+
     // 토큰 검증
     public boolean validateToken(String token) {
         try {
@@ -90,4 +92,7 @@ public class JwtUtil {
     public Claims getUserInfoFromToken(String token) {
         return Jwts.parserBuilder().setSigningKey(key).build().parseClaimsJws(token).getBody();
     }
+
+
+
 }

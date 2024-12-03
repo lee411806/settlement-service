@@ -2,8 +2,8 @@ package com.sparta.settlementservice.userservice.security;
 
 
 
-import com.sparta.userservice.entity.User;
-import com.sparta.userservice.entity.UserRoleEnum;
+import com.sparta.settlementservice.userservice.entity.User;
+import com.sparta.settlementservice.userservice.entity.UserRoleEnum;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;

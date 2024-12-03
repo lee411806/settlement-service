@@ -2,13 +2,13 @@ package com.sparta.settlementservice.userservice.controller;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 
-import com.sparta.userservice.dto.SignupRequestDto;
-import com.sparta.userservice.dto.UserInfoDto;
-import com.sparta.userservice.entity.UserRoleEnum;
-import com.sparta.userservice.jwt.JwtUtil;
-import com.sparta.userservice.security.UserDetailsImpl;
-import com.sparta.userservice.service.KakaoService;
-import com.sparta.userservice.service.UserService;
+import com.sparta.settlementservice.userservice.dto.SignupRequestDto;
+import com.sparta.settlementservice.userservice.dto.UserInfoDto;
+import com.sparta.settlementservice.userservice.entity.UserRoleEnum;
+import com.sparta.settlementservice.userservice.jwt.JwtUtil;
+import com.sparta.settlementservice.userservice.security.UserDetailsImpl;
+import com.sparta.settlementservice.userservice.service.KakaoService;
+import com.sparta.settlementservice.userservice.service.UserService;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;

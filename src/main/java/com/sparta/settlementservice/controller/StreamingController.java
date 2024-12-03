@@ -18,7 +18,6 @@ public class StreamingController {
     //조회 수 증가 후 현재 재생시점 반환
     @PostMapping("/videos/{videoId}/play")
     public int play(@PathVariable Long videoId
-                    ,@RequestBody PlayRequestDto playRequestDto
                     ,HttpServletRequest httpServletRequest) {
               return streamingService.play(videoId,httpServletRequest);
     }

@@ -2,7 +2,7 @@ package com.sparta.settlementservice.userservice.security;
 
 
 
-import com.sparta.userservice.jwt.JwtUtil;
+import com.sparta.settlementservice.userservice.jwt.JwtUtil;
 import io.jsonwebtoken.Claims;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;

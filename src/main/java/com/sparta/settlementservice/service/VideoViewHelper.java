@@ -32,8 +32,8 @@ public class VideoViewHelper {
     }
 
     @Transactional
-    public int createOrUpdateHistory(Long videoId) {
-        dailyVideoViewRepository.upsertVideoViewHistory(videoId);
+    public int createOrUpdateHistory(Long videoId, LocalDate today) {
+        dailyVideoViewRepository.upsertVideoViewHistory(videoId,today);
         return 0; // 시청 기록이 생성되었거나 업데이트되었음을 반환
     }
 

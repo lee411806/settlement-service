@@ -1,6 +1,6 @@
 package com.sparta.settlementservice.userservice.repository;
 
-import com.sparta.userservice.entity.User;
+import com.sparta.settlementservice.userservice.entity.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
