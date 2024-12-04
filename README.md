@@ -115,21 +115,27 @@
   - **Atomic Update**를 도입해 쿼리 실행 동안만 락을 걸어 간단하고 빠르게 동시성 문제 해결
 
 
-기술적 의사결정은 문제를 예방하고 효율적인 시스템을 설계하는 과정이고, 트러블 슈팅은 이미 발생한 문제를 해결하는 대응 과정 위 트러블 슈팅은 적절한가요?
 
 <br>
-
 
 
 
 ## 🏗 아키텍쳐
-![image](https://github.com/user-attachments/assets/b6f8c531-9f69-4083-8d1d-b26b59112463)
+![image](https://github.com/user-attachments/assets/86468bca-7b2a-4db2-bfee-71a014963853)
+
+
 
 <br>
 
-
+<!-- 
 ## :bookmark: API 문서
 🔗 [Postman API Documentation](https://documenter.getpostman.com/view/30989395/2sAYBPktii)
 
 <br>
+-->
+
+## 📙ERD
+
+![image](https://github.com/user-attachments/assets/2cb2a7b2-a574-4cb4-a228-0eeba7cf0aa8)
+
 
