@@ -2,8 +2,8 @@ package com.sparta.settlementservice.batch.settlementbatch;
 
 import com.sparta.settlementservice.batch.entity.WeekViewPlaytime;
 import com.sparta.settlementservice.batch.repo.WeekViewPlaytimeRepository;
-import com.sparta.settlementservice.entity.DailyVideoView;
-import com.sparta.settlementservice.repository.DailyVideoViewRepository;
+import com.sparta.settlementservice.streaming.entity.DailyVideoView;
+import com.sparta.settlementservice.streaming.repository.DailyVideoViewRepository;
 import org.springframework.batch.core.Job;
 import org.springframework.batch.core.Step;
 import org.springframework.batch.core.configuration.annotation.JobScope;
