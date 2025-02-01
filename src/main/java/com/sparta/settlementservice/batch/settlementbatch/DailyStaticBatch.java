@@ -4,8 +4,8 @@ import com.sparta.settlementservice.batch.config.VideoIdPartitioner;
 import com.sparta.settlementservice.batch.entity.DailyViewPlaytime;
 import com.sparta.settlementservice.batch.repo.DailyViewPlaytimeJdbcRepository;
 import com.sparta.settlementservice.batch.repo.DailyViewPlaytimeRepository;
-import com.sparta.settlementservice.entity.DailyVideoView;
-import com.sparta.settlementservice.repository.DailyVideoViewRepository;
+import com.sparta.settlementservice.streaming.entity.DailyVideoView;
+import com.sparta.settlementservice.streaming.repository.DailyVideoViewRepository;
 import org.springframework.batch.core.Job;
 import org.springframework.batch.core.Step;
 import org.springframework.batch.core.configuration.annotation.JobScope;
@@ -23,14 +23,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.*;
 import org.springframework.core.task.TaskExecutor;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.transaction.PlatformTransactionManager;
 
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicLong;
 
 @Configuration
 public class DailyStaticBatch {
