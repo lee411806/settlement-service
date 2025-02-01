@@ -1,9 +1,6 @@
 package com.sparta.settlementservice.streaming.entity;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
+import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -15,9 +12,17 @@ public class ReviewCountAuthentication {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
+    @Column(nullable = false)
     private Long userId;
+
+    @Column(nullable = false)
     private String jwtToken;
+
+    @Column(nullable = false)
     private String ipAddress;
+
+    @Column(nullable = false)
     private Integer lastActionTime;
 
 }

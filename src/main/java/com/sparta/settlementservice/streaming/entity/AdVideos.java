@@ -20,6 +20,7 @@ public class AdVideos {
 
     private String adType;
 
+    @Column(nullable = false)
     private Long viewCount;
 
     @ManyToOne
