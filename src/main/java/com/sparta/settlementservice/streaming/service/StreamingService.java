@@ -1,14 +1,12 @@
 package com.sparta.settlementservice.streaming.service;
 
 
-import com.sparta.settlementservice.streaming.dto.AdviewcountRequestDto;
+import com.sparta.settlementservice.streaming.dto.PlayRequest;
 import com.sparta.settlementservice.user.jwt.JWTUtil;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.time.LocalDate;
 
 @Service
 @Transactional
@@ -21,11 +19,8 @@ public class StreamingService {
     private final JWTUtil jwtUtil;
 
 
-
-
-
     // 동영상 재생 서비스
-    public int play(Long videoId, HttpServletRequest httpServletRequest) {
+    public int play(Long videoId, HttpServletRequest httpServletRequest, PlayRequest playRequest) {
         String jwtToken = jwtUtil.getJwtFromHeader(httpServletRequest);
         String ipAddress = ipHelper.getClientIp(httpServletRequest); // 헬퍼 사용
 
@@ -37,21 +32,15 @@ public class StreamingService {
             System.out.println("어뷰징입니다.");
             return 0;
         } else {
-            // 오늘 날짜 가져오기
-            LocalDate today = LocalDate.now();
-            return videoViewHelper.createOrUpdateHistory(videoId, today); // 헬퍼로 시청 기록 생성
+            return videoViewHelper.createDailyVideoView(videoId,playRequest); // 헬퍼로 시청 기록 생성
         }
     }
 
     // 정지(Pause) 메서드
-    public void pause(Long userId, Long videoId, int currentPosition) {
+    public void pause(Long userId, Long videoId, Long currentPosition) {
         videoViewHelper.updatePlaytime(userId, videoId, currentPosition);
     }
 
-    // 광고 조회수 증가 메서드
-    public void adviewcount(AdviewcountRequestDto adviewcountRequestDto) {
-        videoViewHelper.incrementViewCount(adviewcountRequestDto.getVideoId()); // 조회수 증가
-    }
 
 
 }

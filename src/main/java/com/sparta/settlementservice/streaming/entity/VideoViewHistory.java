@@ -27,13 +27,10 @@ public class VideoViewHistory {
     //MSA환경 문제로 User 대신 userid로 바꿈
     private Long userId;
 
-    private Long videoViewCount;  // 일반 비디오 조회수
-    private Long adViewCount;  // 광고 시청 횟수
-
     private LocalDateTime lastPlayedDate;
     private LocalDate playedDate;
 
-    private Integer currentPosition;
+    private Long currentPosition;
 
 
 }

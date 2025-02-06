@@ -28,15 +28,7 @@ public interface DailyVideoViewRepository extends JpaRepository<DailyVideoView, 
 
     List<DailyVideoView> findByDateBetween(LocalDate startDate, LocalDate endDate);
 
-    @Modifying
-    @Query(value = """
-    INSERT INTO daily_video_view (video_id, date, view_count)
-    VALUES (:videoId, :date, 1)
-    ON DUPLICATE KEY UPDATE
-        view_count = 1
-    """, nativeQuery = true)
-    void upsertVideoViewHistory(@Param("videoId") Long videoId,
-                                @Param("date") LocalDate date);
+
 
 
 

@@ -27,7 +27,7 @@ public class JWTUtil {
     public void init() {  //  yml 값이 설정된 이후 실행되는 초기화 메서드
         this.secretKey = new SecretKeySpec(secret.getBytes(StandardCharsets.UTF_8), Jwts.SIG.HS256.key().build().getAlgorithm());
     }
-
+    //어뷰징 방지 검사
     public String getJwtFromHeader(HttpServletRequest request) {
         String bearerToken = request.getHeader(AUTHORIZATION_HEADER);
         if (StringUtils.hasText(bearerToken) && bearerToken.startsWith(BEARER_PREFIX)) {
