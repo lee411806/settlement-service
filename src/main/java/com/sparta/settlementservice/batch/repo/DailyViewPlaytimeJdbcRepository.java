@@ -27,7 +27,8 @@ public class DailyViewPlaytimeJdbcRepository {
                 rs.getLong("video_id"),
                 rs.getLong("view_count"),
                 rs.getLong("adview_count"),
-                rs.getLong("playtime")
+                rs.getLong("playtime"),
+                rs.getLong("current_position") // 추가된 필드 매핑
         ), lowerBound, upperBound, pageSize);
     }
 

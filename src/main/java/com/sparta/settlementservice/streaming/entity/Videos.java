@@ -1,6 +1,7 @@
 package com.sparta.settlementservice.streaming.entity;
 
 
+import com.sparta.settlementservice.user.entity.UserEntity;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -22,15 +23,9 @@ public class Videos {
     @Column(nullable = false)
     private String title;
 
-    //외래키 설정 필요..?
-    @Column(nullable = false)
-    private Long uploadingUser;
 
-    @Column(nullable = false)
-    private Long viewCount;
-
-    @Column(nullable = false)
-    private Integer lastPlayedTime;
+    @ManyToOne(fetch = FetchType.LAZY)  // ManyToOne 관계 설정
+    private UserEntity uploadingUser;  //  Long → UserEntity 객체로 변경
 
     //광고영상을 넣기 위한 동영상 길이 설정
     @Column(nullable = false)

@@ -1,5 +1,6 @@
 package com.sparta.settlementservice.streaming.service;
 
+import com.sparta.settlementservice.streaming.dto.PlayRequest;
 import com.sparta.settlementservice.streaming.entity.DailyVideoView;
 import com.sparta.settlementservice.streaming.entity.VideoViewHistory;
 import com.sparta.settlementservice.streaming.repository.DailyVideoViewRepository;
@@ -10,7 +11,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Component
@@ -21,36 +21,28 @@ public class VideoViewHelper {
     private final VideoViewHistoryRepository videoViewHistoryRepository;
     private final DailyVideoViewRepository dailyVideoViewRepository;
 
-    // 조회수 증가
-    public void incrementViewCount(Long videoId) {
-        LocalDate today = LocalDate.now();
-        DailyVideoView dailyVideoView = dailyVideoViewRepository.findByVideoIdAndDate(videoId, today)
-                .orElseGet(() -> new DailyVideoView(videoId, today)); // 없으면 새로 생성
-
-        dailyVideoView.incrementViewCount(); // 조회수 증가
-        dailyVideoViewRepository.save(dailyVideoView);
-    }
-
     @Transactional
-    public int createOrUpdateHistory(Long videoId, LocalDate today) {
-        dailyVideoViewRepository.upsertVideoViewHistory(videoId,today);
+    public int createDailyVideoView(Long videoId, PlayRequest playRequest) {
+
+        // DTO → Entity 변환
+        DailyVideoView dailyVideoView = new DailyVideoView(playRequest, videoId);
+
+        dailyVideoViewRepository.save(dailyVideoView);
         return 0; // 시청 기록이 생성되었거나 업데이트되었음을 반환
     }
 
     // 재생 시간 업데이트
-    public void updatePlaytime(Long userId, Long videoId, int currentPosition) {
+    public void updatePlaytime(Long userId, Long videoId, Long currentPosition) {
+        // 시청기록 존재 확인
         VideoViewHistory history = videoViewHistoryRepository.findByUserIdAndVideoId(userId, videoId)
                 .orElseThrow(() -> new EntityNotFoundException("시청 기록이 존재하지 않습니다."));
 
+
+        // 시청 기록 저장
         history.setLastPlayedDate(LocalDateTime.now());
         history.setCurrentPosition(currentPosition);
-        videoViewHistoryRepository.save(history); // 시청 기록 저장
 
-        LocalDate today = LocalDate.now();
-        DailyVideoView dailyVideoView = dailyVideoViewRepository.findByVideoIdAndDate(videoId, today)
-                .orElseThrow(() -> new EntityNotFoundException("DailyVideoView 기록이 존재하지 않습니다."));
+        videoViewHistoryRepository.save(history);
 
-        dailyVideoView.increasePlaytime(currentPosition); // 재생 시간 추가
-        dailyVideoViewRepository.save(dailyVideoView); // 업데이트된 DailyVideoView 저장
     }
 }

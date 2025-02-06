@@ -1,6 +1,7 @@
 package com.sparta.settlementservice.streaming.entity;
 
 
+import com.sparta.settlementservice.streaming.dto.PlayRequest;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -19,7 +20,7 @@ import java.time.LocalDate;
         }
 )
 
-public class DailyVideoView{
+public class DailyVideoView extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -27,50 +28,41 @@ public class DailyVideoView{
 
     private Long videoId; // 동영상 정보와 연관 관계
 
-    @Column(name = "date", nullable = false)
+    @Column( nullable = false)
     private LocalDate date; // 날짜별 조회수를 기록하기 위한 날짜
 
-    @Column(name = "view_count")
     private Long viewCount = 0L; // 날짜별 조회수 초기값 0으로 설정
 
-    @Column(name = "adview_count")
     private Long adViewCount = 0L; // 날짜별 광고 시청 횟수 초기값 0으로 설정
 
-    @Column(name="playtime")
+    //총합 playtime 시간 계산 때문에 Long 통일
     private Long playTime = 0L;
+
+    private Long currentPosition = 0L;
 
     private String statType;
 
 
-
-    public DailyVideoView(Long videoId, LocalDate today) {
+    // 생성자
+    public DailyVideoView(PlayRequest playRequest,Long videoId) {
         this.videoId = videoId;
-        this.date = today;
+        this.viewCount = 1L;
+        this.currentPosition= playRequest.getCurrentPosition();
+        this.playTime = playRequest.getPlaytime();
+        this.adViewCount = playRequest.getPlaytime() /5;
     }
 
-    // 생성자
-    public DailyVideoView(Long videoId, Long viewCount, Long adViewCount, Long playTime) {
+    public DailyVideoView(Long videoId, Long viewCount, Long adViewCount, Long playTime, Long currentPosition) {
         this.videoId = videoId;
         this.viewCount = viewCount;
         this.adViewCount = adViewCount;
         this.playTime = playTime;
-    }
-
-    // 조회수 증가 메서드
-    public void incrementViewCount() {
-        this.viewCount += 1;
+        this.currentPosition = currentPosition;
     }
 
 
-    public void incrementAdViewCount() {
-        this.adViewCount += 1;
-    }
-
-    public void increasePlaytime(int currentposition) {
+    public void increasePlaytime(Long currentposition) {
         this.playTime += currentposition;
     }
 
-    public void setStatType(String statType) {
-        this.statType = statType;
-    }
 }

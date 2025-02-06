@@ -1,11 +1,12 @@
 package com.sparta.settlementservice.user.entity;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
+import com.sparta.settlementservice.streaming.entity.Videos;
+import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
+
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Getter
@@ -15,6 +16,9 @@ public class UserEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
+    @OneToMany(mappedBy = "uploadingUser", cascade = CascadeType.ALL) // ✅ 연관관계 설정
+    private List<Videos> uploadedVideos = new ArrayList<>();
 
     private String username;
     private String name;
