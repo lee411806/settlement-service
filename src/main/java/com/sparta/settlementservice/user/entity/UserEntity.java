@@ -17,7 +17,7 @@ public class UserEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @OneToMany(mappedBy = "uploadingUser", cascade = CascadeType.ALL) // ✅ 연관관계 설정
+    @OneToMany(mappedBy = "uploadingUser", cascade = CascadeType.ALL) //  연관관계 설정
     private List<Videos> uploadedVideos = new ArrayList<>();
 
     private String username;
