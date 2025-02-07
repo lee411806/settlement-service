@@ -14,7 +14,6 @@ import java.time.LocalDate;
 @Setter
 @NoArgsConstructor
 @Table(
-        name = "daily_video_view",
         indexes = {
                 @Index(name = "idx_video_id", columnList = "videoId"), // 기존 인덱스
         }

@@ -12,7 +12,6 @@ import java.util.List;
 
 @Entity
 @NoArgsConstructor
-@Table(name="videos")
 @Getter
 @Setter
 public class Videos {

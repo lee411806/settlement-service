@@ -11,7 +11,6 @@ import java.time.LocalDateTime;
 
 @Entity
 @NoArgsConstructor
-@Table(name = "videohistory")
 @Getter
 @Setter
 public class VideoViewHistory {
