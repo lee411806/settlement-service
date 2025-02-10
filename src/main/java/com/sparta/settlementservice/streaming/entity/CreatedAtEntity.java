@@ -14,7 +14,7 @@ import java.time.LocalDateTime;
 @MappedSuperclass  // 상속받는 엔티티에 필드를 추가
 @EntityListeners(AuditingEntityListener.class)  // 자동으로 생성/수정 시간 기록
 @Getter
-public class BaseEntity {
+public class CreatedAtEntity  {
 
     @CreatedDate  // 생성 시간 자동 기록
     @Column(updatable = false)  // 수정 불가

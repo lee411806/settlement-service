@@ -38,7 +38,7 @@ public class JWTFilter extends OncePerRequestFilter {
             }
         }
 
-        //Authorization 헤더 검증
+        //Authorization 쿠키 검증
         if (authorization == null) {
 
             System.out.println("token null");

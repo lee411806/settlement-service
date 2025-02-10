@@ -21,7 +21,7 @@ public class StreamingService {
 
     // 동영상 재생 서비스
     public int play(Long videoId, HttpServletRequest httpServletRequest, PlayRequest playRequest) {
-        String jwtToken = jwtUtil.getJwtFromHeader(httpServletRequest);
+        String jwtToken = jwtUtil.getTokenFromCookies(httpServletRequest);
         String ipAddress = ipHelper.getClientIp(httpServletRequest); // 헬퍼 사용
 
         // 출력
@@ -38,9 +38,10 @@ public class StreamingService {
 
     // 정지(Pause) 메서드
     public void pause(Long userId, Long videoId, Long currentPosition) {
-        videoViewHelper.updatePlaytime(userId, videoId, currentPosition);
+        videoViewHelper.createVideoViewHistory(userId, videoId, currentPosition);
     }
 
+    //jwtutil에서 userid 가져오는 방법
 
 
 }
