@@ -23,7 +23,7 @@ public class StreamingController {
     }
 
     // 현재 재생 시점 db에 저장
-    @GetMapping("/users/{userId}/videos/{videoId}/pause")
+    @PostMapping("/users/{userId}/videos/{videoId}/pause")
     public void pause(@PathVariable Long userId,
                       @PathVariable Long videoId,
                       @RequestParam Long currentPosition) {

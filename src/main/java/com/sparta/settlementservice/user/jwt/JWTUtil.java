@@ -1,7 +1,9 @@
 package com.sparta.settlementservice.user.jwt;
 
+import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import jakarta.annotation.PostConstruct;
+import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.Getter;
 import lombok.Setter;
@@ -21,26 +23,27 @@ import java.util.Date;
 @Setter  //  yml 값을 주입받기 위해 Setter 필요
 public class JWTUtil {
 
-    public static final String AUTHORIZATION_HEADER = "Authorization";
-    public static final String BEARER_PREFIX = "Bearer ";
-
-
     @Value("${jwt.secret}")
     private String secret;  //  yml에서 주입될 필드
     private SecretKey secretKey;
+
+    private static final String COOKIE_NAME = "Authorization";
 
     @PostConstruct
     public void init() {  //  yml 값이 설정된 이후 실행되는 초기화 메서드
         this.secretKey = new SecretKeySpec(secret.getBytes(StandardCharsets.UTF_8), Jwts.SIG.HS256.key().build().getAlgorithm());
     }
 
-    //어뷰징 방지 검사
-    public String getJwtFromHeader(HttpServletRequest request) {
-        String bearerToken = request.getHeader(AUTHORIZATION_HEADER);
-        if (StringUtils.hasText(bearerToken) && bearerToken.startsWith(BEARER_PREFIX)) {
-            return bearerToken.substring(7);
+    //  쿠키에서 JWT 가져오는 메서드
+    public String getTokenFromCookies(HttpServletRequest request) {
+        if (request.getCookies() != null) {
+            for (Cookie cookie : request.getCookies()) {
+                if (COOKIE_NAME.equals(cookie.getName())) {
+                    return cookie.getValue(); // 🔥 JWT 반환
+                }
+            }
         }
-        return null;
+        return null; // JWT 쿠키가 없으면 null 반환
     }
 
     public String getUsername(String token) {
@@ -51,6 +54,7 @@ public class JWTUtil {
         return Jwts.parser().verifyWith(secretKey).build().parseSignedClaims(token).getPayload().get("role", String.class);
     }
 
+    // 토큰 만료뿐만아니라 서명 검증도 들어가있음
     public Boolean isExpired(String token) {
         return Jwts.parser().verifyWith(secretKey).build().parseSignedClaims(token).getPayload().getExpiration().before(new Date());
     }

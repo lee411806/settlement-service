@@ -13,23 +13,23 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @Getter
 @Setter
-public class VideoViewHistory {
+public class VideoViewHistory extends UpdatedAtEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne
-    @JoinColumn(name = "video_id")
-    private Videos video;
+    private Long videoId;
 
     //MSA환경 문제로 User 대신 userid로 바꿈
     private Long userId;
 
-    private LocalDateTime lastPlayedDate;
-    private LocalDate playedDate;
-
     private Long currentPosition;
 
 
+    public VideoViewHistory(Long userId, Long videoId, Long currentPosition) {
+        this.userId = userId;
+        this.videoId = videoId;
+        this.currentPosition = currentPosition;
+    }
 }

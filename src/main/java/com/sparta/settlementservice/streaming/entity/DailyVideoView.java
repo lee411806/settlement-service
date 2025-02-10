@@ -19,16 +19,13 @@ import java.time.LocalDate;
         }
 )
 
-public class DailyVideoView extends BaseEntity {
+public class DailyVideoView extends CreatedAtEntity  {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     private Long videoId; // 동영상 정보와 연관 관계
-
-    @Column( nullable = false)
-    private LocalDate date; // 날짜별 조회수를 기록하기 위한 날짜
 
     private Long viewCount = 0L; // 날짜별 조회수 초기값 0으로 설정
 
@@ -57,11 +54,6 @@ public class DailyVideoView extends BaseEntity {
         this.adViewCount = adViewCount;
         this.playTime = playTime;
         this.currentPosition = currentPosition;
-    }
-
-
-    public void increasePlaytime(Long currentposition) {
-        this.playTime += currentposition;
     }
 
 }
