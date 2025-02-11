@@ -18,30 +18,18 @@ public class DailyViewPlaytimeJdbcRepository {
 
     // Find by VideoId range and order by VideoId
     public List<DailyVideoView> findByVideoIdBetweenOrderByVideoId(Long lowerBound, Long upperBound, int pageSize) {
-        String sql = "SELECT * FROM daily_video_view " +
-                "WHERE video_id BETWEEN ? AND ? " +
-                "ORDER BY video_id " +
+        String sql = "SELECT * FROM dailyVideoView " +
+                "WHERE videoId BETWEEN ? AND ? " +
+                "ORDER BY videoId " +
                 "LIMIT ?";
 
         return jdbcTemplate.query(sql, (rs, rowNum) -> new DailyVideoView(
-                rs.getLong("video_id"),
-                rs.getLong("view_count"),
-                rs.getLong("adview_count"),
-                rs.getLong("playtime"),
-                rs.getLong("current_position") // 추가된 필드 매핑
+                rs.getLong("videoId"),
+                rs.getLong("viewCount"),
+                rs.getLong("adViewCount"),
+                rs.getLong("playTime"),
+                rs.getLong("currentPosition") // 추가된 필드 매핑
         ), lowerBound, upperBound, pageSize);
-    }
-
-
-    public List<DailyViewPlaytime> findByVideoId(Long videoId) {
-        String sql = "SELECT * FROM daily_view_playtime WHERE video_id = ?";
-
-        return jdbcTemplate.query(sql, (rs, rowNum) -> new DailyViewPlaytime(
-                rs.getLong("video_id"),
-                rs.getLong("total_view_count"),
-                rs.getLong("total_ad_view_count"),
-                rs.getLong("total_play_time")
-        ), videoId);
     }
 
     public void saveAllWithDuplicateCheck(List<DailyViewPlaytime> items) {
@@ -52,16 +40,17 @@ public class DailyViewPlaytimeJdbcRepository {
 
         // SQL 문 작성 (ON DUPLICATE KEY UPDATE 포함)
         String sql = """
-        INSERT INTO daily_view_playtime (video_id, total_view_count, total_ad_view_count, total_play_time)
-        VALUES (?, ?, ?, ?)
+        INSERT INTO dailyViewPlaytime (videoId, date, totalViewCount, totalAdViewCount, totalPlayTime)
+        VALUES (?, ?, ?, ?, ?)
         ON DUPLICATE KEY UPDATE 
-        total_view_count = total_view_count + VALUES(total_view_count),
-        total_ad_view_count = total_ad_view_count + VALUES(total_ad_view_count),
-        total_play_time = total_play_time + VALUES(total_play_time)
+        date = VALUES(date), 
+        totalViewCount = totalViewCount + VALUES(totalViewCount),
+        totalAdViewCount = totalAdViewCount + VALUES(totalAdViewCount),
+        totalPlayTime = totalPlayTime + VALUES(totalPlayTime)
     """;
 
         // 배치 크기 설정 (예: 1000)
-        int batchSize = 1000;
+        int batchSize = 8000;
         int totalSize = items.size();
         int processed = 0;
 
@@ -74,9 +63,10 @@ public class DailyViewPlaytimeJdbcRepository {
                 // 배치 처리
                 jdbcTemplate.batchUpdate(sql, batchItems, batchItems.size(), (ps, item) -> {
                     ps.setLong(1, item.getVideoId());
-                    ps.setLong(2, item.getTotalViewCount());
-                    ps.setLong(3, item.getTotalAdViewCount());
-                    ps.setLong(4, item.getTotalPlayTime());
+                    ps.setObject(2, item.getDate()); // 🔥 `date` 값 추가
+                    ps.setLong(3, item.getTotalViewCount());
+                    ps.setLong(4, item.getTotalAdViewCount());
+                    ps.setLong(5, item.getTotalPlayTime());
                 });
 
                 System.out.println("[saveAllWithDuplicateCheck] Processed batch: " + (processed + 1) + " to " + endIndex);
@@ -90,6 +80,5 @@ public class DailyViewPlaytimeJdbcRepository {
             throw new RuntimeException("Batch update failed", e);
         }
     }
-
 
 }

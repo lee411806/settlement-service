@@ -26,6 +26,7 @@ import org.springframework.core.task.TaskExecutor;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.transaction.PlatformTransactionManager;
 
+import java.time.LocalDate;
 import java.util.*;
 
 @Configuration
@@ -33,28 +34,25 @@ public class DailyStaticBatch {
 
     private final JobRepository jobRepository;
     private final PlatformTransactionManager platformTransactionManager;
-    private final DailyViewPlaytimeRepository dailyViewPlaytimeRepository;
-    private final DailyVideoViewRepository dailyVideoViewRepository;
     private final DailyViewPlaytimeJdbcRepository dailyViewPlaytimeJdbcRepository;
+    private final TaskExecutor taskExecutor;
 
     @Autowired
     public DailyStaticBatch(JobRepository jobRepository,
                             PlatformTransactionManager platformTransactionManager,
-                            DailyViewPlaytimeRepository dailyViewPlaytimeRepository,
-                            DailyVideoViewRepository dailyVideoViewRepository,
-                            DailyViewPlaytimeJdbcRepository dailyViewPlaytimeJdbcRepository
+                            DailyViewPlaytimeJdbcRepository dailyViewPlaytimeJdbcRepository,
+                            TaskExecutor taskExecutor
+
     ) {
         this.jobRepository = jobRepository;
         this.platformTransactionManager = platformTransactionManager;
-        this.dailyViewPlaytimeRepository = dailyViewPlaytimeRepository;
-        this.dailyVideoViewRepository = dailyVideoViewRepository;
         this.dailyViewPlaytimeJdbcRepository = dailyViewPlaytimeJdbcRepository;
+        this.taskExecutor = taskExecutor;
     }
 
     // Job 구성
     @Bean
     public Job dailyStatisticsJob() {
-        System.out.println("[Job] Starting 'dailyStatisticsJob'");
         return new JobBuilder("dailyStatisticsJob", jobRepository)
                 .start(partitionedDailyStatisticsStep()) // 파티션 Step 실행
                 .build();
@@ -63,30 +61,15 @@ public class DailyStaticBatch {
 
     @Bean
     public Partitioner videoIdPartitioner() {
-        System.out.println("[Partitioner] Initialized VideoIdPartitioner");
         return new VideoIdPartitioner(); // 너가 작성한 Partitioner
     }
 
-    //TaskExecutor 빈이 하나로만 정의되어 있지만, 파티셔닝을 이용해서
-    // 병렬 처리를 하도록 설정하는 것이므로 TaskExecutor가 여러 개로 인식되는 문제는 @Primary 어노테이션으로 해결이 가능
-    @Primary
     @Bean
-    public TaskExecutor taskExecutor() {
-        ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
-        executor.setCorePoolSize(4); // 최소 4개의 스레드
-        executor.setMaxPoolSize(8);  // 최대 8개의 스레드
-        executor.setQueueCapacity(100); // 대기 큐의 크기
-        executor.setThreadNamePrefix("batch-executor-");
-        executor.initialize();
-        return executor;
-    }
-
-    @Bean
-    public PartitionHandler partitionHandler(TaskExecutor taskExecutor) {
+    public PartitionHandler partitionHandler(TaskExecutor taskExecutor, Step dailyStatisticsStep) {
         TaskExecutorPartitionHandler partitionHandler = new TaskExecutorPartitionHandler();
-        partitionHandler.setTaskExecutor(taskExecutor); // 병렬 처리할 TaskExecutor 지정
-        partitionHandler.setStep(dailyStatisticsStep()); // 각 파티션에 대해 실행할 Step 지정
-        partitionHandler.setGridSize(4); // 병렬 처리 수 (4개의 파티션)
+        partitionHandler.setTaskExecutor(taskExecutor); // 멀티스레드 실행
+        partitionHandler.setStep(dailyStatisticsStep);  // 실행할 Step 지정
+        partitionHandler.setGridSize(4); // 병렬 실행 개수 (4개)
         return partitionHandler;
     }
 
@@ -94,12 +77,11 @@ public class DailyStaticBatch {
     @Bean
     @JobScope
     public Step partitionedDailyStatisticsStep() {
-        System.out.println("[Step] Starting 'partitionedDailyStatisticsStep'");
         return new StepBuilder("partitionedDailyStatisticsStep", jobRepository)
                 .partitioner("dailyStatisticsStep", videoIdPartitioner()) // 파티션 설정
-                .step(dailyStatisticsStep()) // 기존 Step 재사용
-                .partitionHandler(partitionHandler(taskExecutor())) // 병렬 처리 핸들러 추가
-                .gridSize(4) // 병렬 처리 수 (4개의 파티션)
+                .step(dailyStatisticsStep()) // 실행할 step 지정
+                .partitionHandler(partitionHandler(taskExecutor, dailyStatisticsStep())) // 병렬 실행
+                .gridSize(4) // 병렬 처리 수 지정
                 .build();
     }
 
@@ -180,7 +162,11 @@ public class DailyStaticBatch {
                 return null;
             }
 
+            // 현재 날짜 가져오기
+            LocalDate today = LocalDate.now();
+
             DailyViewPlaytime existingData = processedDataMap.get(dailyVideoView.getVideoId());
+            System.out.println("[Processor] Processing videoId: " + dailyVideoView.getVideoId() + ", date: " + today);
             if (existingData != null) {
                 // 기존 데이터에 값 합산
                 existingData.setTotalViewCount(existingData.getTotalViewCount() + dailyVideoView.getViewCount());
@@ -194,7 +180,8 @@ public class DailyStaticBatch {
                     dailyVideoView.getVideoId(),
                     dailyVideoView.getViewCount(),
                     dailyVideoView.getAdViewCount(),
-                    dailyVideoView.getPlayTime()
+                    dailyVideoView.getPlayTime(),
+                    today
             );
             processedDataMap.put(dailyVideoView.getVideoId(), newData);
             return newData;
@@ -220,7 +207,9 @@ public class DailyStaticBatch {
                     return existing;
                 });
             }
-
+            for (DailyViewPlaytime item : items) {
+                System.out.println("[Writer] Writing videoId: " + item.getVideoId() + ", date: " + item.getDate());
+            }
             // DB에 Bulk 저장
             dailyViewPlaytimeJdbcRepository.saveAllWithDuplicateCheck(new ArrayList<>(consolidatedMap.values()));
         };
