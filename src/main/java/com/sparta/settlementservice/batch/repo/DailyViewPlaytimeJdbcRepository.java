@@ -32,17 +32,6 @@ public class DailyViewPlaytimeJdbcRepository {
         ), lowerBound, upperBound, pageSize);
     }
 
-    public List<DailyViewPlaytime> findByVideoId(Long videoId) {
-        String sql = "SELECT * FROM dailyViewPlaytime WHERE videoId = ?";
-
-        return jdbcTemplate.query(sql, (rs, rowNum) -> new DailyViewPlaytime(
-                rs.getLong("videoId"),
-                rs.getLong("totalViewCount"),
-                rs.getLong("totalAdViewCount"),
-                rs.getLong("totalPlayTime")
-        ), videoId);
-    }
-
     public void saveAllWithDuplicateCheck(List<DailyViewPlaytime> items) {
         if (items.isEmpty()) {
             System.out.println("[saveAllWithDuplicateCheck] No items to process.");
@@ -51,16 +40,17 @@ public class DailyViewPlaytimeJdbcRepository {
 
         // SQL 문 작성 (ON DUPLICATE KEY UPDATE 포함)
         String sql = """
-        INSERT INTO dailyViewPlaytime (videoId, totalViewCount, totalAdViewCount, totalPlayTime)
-        VALUES (?, ?, ?, ?)
+        INSERT INTO dailyViewPlaytime (videoId, date, totalViewCount, totalAdViewCount, totalPlayTime)
+        VALUES (?, ?, ?, ?, ?)
         ON DUPLICATE KEY UPDATE 
+        date = VALUES(date), 
         totalViewCount = totalViewCount + VALUES(totalViewCount),
         totalAdViewCount = totalAdViewCount + VALUES(totalAdViewCount),
         totalPlayTime = totalPlayTime + VALUES(totalPlayTime)
-        """;
+    """;
 
         // 배치 크기 설정 (예: 1000)
-        int batchSize = 1000;
+        int batchSize = 8000;
         int totalSize = items.size();
         int processed = 0;
 
@@ -73,9 +63,10 @@ public class DailyViewPlaytimeJdbcRepository {
                 // 배치 처리
                 jdbcTemplate.batchUpdate(sql, batchItems, batchItems.size(), (ps, item) -> {
                     ps.setLong(1, item.getVideoId());
-                    ps.setLong(2, item.getTotalViewCount());
-                    ps.setLong(3, item.getTotalAdViewCount());
-                    ps.setLong(4, item.getTotalPlayTime());
+                    ps.setObject(2, item.getDate()); // 🔥 `date` 값 추가
+                    ps.setLong(3, item.getTotalViewCount());
+                    ps.setLong(4, item.getTotalAdViewCount());
+                    ps.setLong(5, item.getTotalPlayTime());
                 });
 
                 System.out.println("[saveAllWithDuplicateCheck] Processed batch: " + (processed + 1) + " to " + endIndex);
@@ -89,4 +80,5 @@ public class DailyViewPlaytimeJdbcRepository {
             throw new RuntimeException("Batch update failed", e);
         }
     }
+
 }

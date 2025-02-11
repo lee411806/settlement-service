@@ -26,6 +26,7 @@ import org.springframework.core.task.TaskExecutor;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.transaction.PlatformTransactionManager;
 
+import java.time.LocalDate;
 import java.util.*;
 
 @Configuration
@@ -161,7 +162,11 @@ public class DailyStaticBatch {
                 return null;
             }
 
+            // 현재 날짜 가져오기
+            LocalDate today = LocalDate.now();
+
             DailyViewPlaytime existingData = processedDataMap.get(dailyVideoView.getVideoId());
+            System.out.println("[Processor] Processing videoId: " + dailyVideoView.getVideoId() + ", date: " + today);
             if (existingData != null) {
                 // 기존 데이터에 값 합산
                 existingData.setTotalViewCount(existingData.getTotalViewCount() + dailyVideoView.getViewCount());
@@ -175,7 +180,8 @@ public class DailyStaticBatch {
                     dailyVideoView.getVideoId(),
                     dailyVideoView.getViewCount(),
                     dailyVideoView.getAdViewCount(),
-                    dailyVideoView.getPlayTime()
+                    dailyVideoView.getPlayTime(),
+                    today
             );
             processedDataMap.put(dailyVideoView.getVideoId(), newData);
             return newData;
@@ -201,7 +207,9 @@ public class DailyStaticBatch {
                     return existing;
                 });
             }
-
+            for (DailyViewPlaytime item : items) {
+                System.out.println("[Writer] Writing videoId: " + item.getVideoId() + ", date: " + item.getDate());
+            }
             // DB에 Bulk 저장
             dailyViewPlaytimeJdbcRepository.saveAllWithDuplicateCheck(new ArrayList<>(consolidatedMap.values()));
         };
