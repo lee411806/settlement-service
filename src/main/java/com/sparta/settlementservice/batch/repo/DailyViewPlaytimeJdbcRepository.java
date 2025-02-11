@@ -18,29 +18,28 @@ public class DailyViewPlaytimeJdbcRepository {
 
     // Find by VideoId range and order by VideoId
     public List<DailyVideoView> findByVideoIdBetweenOrderByVideoId(Long lowerBound, Long upperBound, int pageSize) {
-        String sql = "SELECT * FROM daily_video_view " +
-                "WHERE video_id BETWEEN ? AND ? " +
-                "ORDER BY video_id " +
+        String sql = "SELECT * FROM dailyVideoView " +
+                "WHERE videoId BETWEEN ? AND ? " +
+                "ORDER BY videoId " +
                 "LIMIT ?";
 
         return jdbcTemplate.query(sql, (rs, rowNum) -> new DailyVideoView(
-                rs.getLong("video_id"),
-                rs.getLong("view_count"),
-                rs.getLong("adview_count"),
-                rs.getLong("playtime"),
-                rs.getLong("current_position") // 추가된 필드 매핑
+                rs.getLong("videoId"),
+                rs.getLong("viewCount"),
+                rs.getLong("adViewCount"),
+                rs.getLong("playTime"),
+                rs.getLong("currentPosition") // 추가된 필드 매핑
         ), lowerBound, upperBound, pageSize);
     }
 
-
     public List<DailyViewPlaytime> findByVideoId(Long videoId) {
-        String sql = "SELECT * FROM daily_view_playtime WHERE video_id = ?";
+        String sql = "SELECT * FROM dailyViewPlaytime WHERE videoId = ?";
 
         return jdbcTemplate.query(sql, (rs, rowNum) -> new DailyViewPlaytime(
-                rs.getLong("video_id"),
-                rs.getLong("total_view_count"),
-                rs.getLong("total_ad_view_count"),
-                rs.getLong("total_play_time")
+                rs.getLong("videoId"),
+                rs.getLong("totalViewCount"),
+                rs.getLong("totalAdViewCount"),
+                rs.getLong("totalPlayTime")
         ), videoId);
     }
 
@@ -52,13 +51,13 @@ public class DailyViewPlaytimeJdbcRepository {
 
         // SQL 문 작성 (ON DUPLICATE KEY UPDATE 포함)
         String sql = """
-        INSERT INTO daily_view_playtime (video_id, total_view_count, total_ad_view_count, total_play_time)
+        INSERT INTO dailyViewPlaytime (videoId, totalViewCount, totalAdViewCount, totalPlayTime)
         VALUES (?, ?, ?, ?)
         ON DUPLICATE KEY UPDATE 
-        total_view_count = total_view_count + VALUES(total_view_count),
-        total_ad_view_count = total_ad_view_count + VALUES(total_ad_view_count),
-        total_play_time = total_play_time + VALUES(total_play_time)
-    """;
+        totalViewCount = totalViewCount + VALUES(totalViewCount),
+        totalAdViewCount = totalAdViewCount + VALUES(totalAdViewCount),
+        totalPlayTime = totalPlayTime + VALUES(totalPlayTime)
+        """;
 
         // 배치 크기 설정 (예: 1000)
         int batchSize = 1000;
@@ -90,6 +89,4 @@ public class DailyViewPlaytimeJdbcRepository {
             throw new RuntimeException("Batch update failed", e);
         }
     }
-
-
 }
