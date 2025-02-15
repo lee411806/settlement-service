@@ -28,7 +28,7 @@ public class Top5Statistics {
 
     private Long videoId; //  비디오 ID
 
-    private int rank;
+    private int ranking;
 
     private Long value; // 해당 기준의 수치 (조회수 or 재생 시간)
 

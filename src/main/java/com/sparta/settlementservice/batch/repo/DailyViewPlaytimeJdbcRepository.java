@@ -1,10 +1,13 @@
 package com.sparta.settlementservice.batch.repo;
 
+import com.sparta.settlementservice.batch.dto.VideoViewStats;
 import com.sparta.settlementservice.batch.entity.DailyViewPlaytime;
 import com.sparta.settlementservice.streaming.entity.DailyVideoView;
+import org.springframework.data.jpa.repository.Query;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 
+import java.time.LocalDate;
 import java.util.List;
 
 @Repository
@@ -80,5 +83,28 @@ public class DailyViewPlaytimeJdbcRepository {
             throw new RuntimeException("Batch update failed", e);
         }
     }
+
+
+    // 여기서 부터 Top5 배치 Jdbc 활용
+    // ✅ 하나의 메서드에서 statType에 따라 쿼리 실행
+    public List<VideoViewStats> findTop5ByStatType(LocalDate targetDate, String statType) {
+        String orderByColumn = statType.equals("VIEW_COUNT") ? "SUM(viewCount)" : "SUM(playTime)";
+
+        String sql = "SELECT videoId, " + orderByColumn + " AS totalValue " +
+                "FROM dailyVideoView " +
+                "WHERE DATE(createdAt) = ? " +  // ✅ 특정 날짜만 조회하도록 수정
+                "GROUP BY videoId " +
+                "ORDER BY totalValue DESC " +
+                "LIMIT 5";  // ✅ TOP 5 고정
+
+        return jdbcTemplate.query(sql, (rs, rowNum) -> new VideoViewStats(
+                rs.getLong("videoId"),
+                rs.getLong("totalValue"),
+                statType
+        ), targetDate);
+    }
+
+
+
 
 }
