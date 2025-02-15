@@ -30,7 +30,7 @@ import java.time.LocalDate;
 import java.util.*;
 
 @Configuration
-public class DailyStaticBatch {
+public class DailyStatisticBatch {
 
     private final JobRepository jobRepository;
     private final PlatformTransactionManager platformTransactionManager;
@@ -38,7 +38,7 @@ public class DailyStaticBatch {
     private final TaskExecutor taskExecutor;
 
     @Autowired
-    public DailyStaticBatch(JobRepository jobRepository,
+    public DailyStatisticBatch(JobRepository jobRepository,
                             PlatformTransactionManager platformTransactionManager,
                             DailyViewPlaytimeJdbcRepository dailyViewPlaytimeJdbcRepository,
                             TaskExecutor taskExecutor
