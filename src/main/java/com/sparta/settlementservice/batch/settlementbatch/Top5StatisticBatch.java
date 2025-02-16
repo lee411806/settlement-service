@@ -1,5 +1,6 @@
 package com.sparta.settlementservice.batch.settlementbatch;
 
+import com.sparta.settlementservice.batch.config.BatchExecutionDecider;
 import com.sparta.settlementservice.batch.dto.VideoViewStats;
 import com.sparta.settlementservice.batch.entity.Top5Statistics;
 import com.sparta.settlementservice.batch.repo.DailyViewPlaytimeJdbcRepository;
@@ -27,19 +28,32 @@ public class Top5StatisticBatch {
 
     private final DailyViewPlaytimeJdbcRepository dailyViewPlaytimeJdbcRepository;
     private final Top5StatisticsRepository top5StatisticsRepository;
+    private final BatchExecutionDecider batchExecutionDecider;
 
     public Top5StatisticBatch(
             DailyViewPlaytimeJdbcRepository dailyViewPlaytimeJdbcRepository
-            , Top5StatisticsRepository top5StatisticsRepository) {
+            , Top5StatisticsRepository top5StatisticsRepository
+            , BatchExecutionDecider batchExecutionDecider) {
 
         this.dailyViewPlaytimeJdbcRepository = dailyViewPlaytimeJdbcRepository;
         this.top5StatisticsRepository = top5StatisticsRepository;
+        this.batchExecutionDecider = batchExecutionDecider;
     }
 
     @Bean
-    public Job top5StatisticsBatchJob(JobRepository jobRepository, Step dailyTop5Step) {
+    public Job top5StatisticsBatchJob(
+            JobRepository jobRepository,
+            Step dailyTop5Step,
+            Step weeklyTop5Step,
+            Step monthlyTop5Step,
+            BatchExecutionDecider batchExecutionDecider) {
+
         return new JobBuilder("top5StatisticsBatchJob", jobRepository)
-                .start(dailyTop5Step)
+                .start(dailyTop5Step) // DAILY Step은 항상 실행
+                .next(batchExecutionDecider) // Decider 실행 후 상태 값 확인
+                .on("WEEKLY").to(weeklyTop5Step) // WEEKLY면 weeklyTop5Step 실행
+                .from(batchExecutionDecider).on("MONTHLY").to(monthlyTop5Step) // MONTHLY면 monthlyTop5Step 실행
+                .end()
                 .build();
     }
 
@@ -48,8 +62,28 @@ public class Top5StatisticBatch {
         return new StepBuilder("dailyTop5Step", jobRepository)
                 .<VideoViewStats, Top5Statistics>chunk(100, transactionManager)
                 .reader(dailyTop5Reader())
-                .processor(dailyTop5Processor())
-                .writer(dailyTop5Writer()) //
+                .processor(top5StatisticsProcessor())
+                .writer(top5StatisticsWriter()) //
+                .build();
+    }
+
+    @Bean
+    public Step weeklyTop5Step(JobRepository jobRepository, PlatformTransactionManager transactionManager) {
+        return new StepBuilder("weeklyTop5Step", jobRepository)
+                .<VideoViewStats, Top5Statistics>chunk(100, transactionManager)
+                .reader(weeklyTop5Reader())
+                .processor(top5StatisticsProcessor()) // 통합된 Processor 사용
+                .writer(top5StatisticsWriter()) // 통합된 Writer 사용
+                .build();
+    }
+
+    @Bean
+    public Step monthlyTop5Step(JobRepository jobRepository, PlatformTransactionManager transactionManager) {
+        return new StepBuilder("monthlyTop5Step", jobRepository)
+                .<VideoViewStats, Top5Statistics>chunk(100, transactionManager)
+                .reader(monthlyTop5Reader())
+                .processor(top5StatisticsProcessor()) // 통합된 Processor 사용
+                .writer(top5StatisticsWriter()) // 통합된 Writer 사용
                 .build();
     }
 
@@ -60,21 +94,22 @@ public class Top5StatisticBatch {
             private final List<VideoViewStats> buffer = new ArrayList<>();
             private int nextIndex = 0;
             private boolean loaded = false;
-            private final LocalDate targetDate = LocalDate.now();
-
+            private final LocalDate startDate = LocalDate.now();
+            private final LocalDate endDate = LocalDate.now();
 
             @Override
             public VideoViewStats read() {
                 if (!loaded) {
-                    //paging 방식 -> buffer 방식
-                    //가져올 데이터 크기가 그렇게 크지 않고, top5만가져오면 되기 때문
-                    List<VideoViewStats> viewCountStats = dailyViewPlaytimeJdbcRepository.findTop5ByStatType(targetDate, "VIEW_COUNT");
-                    List<VideoViewStats> playTimeStats = dailyViewPlaytimeJdbcRepository.findTop5ByStatType(targetDate, "PLAY_TIME");
+                    buffer.addAll(dailyViewPlaytimeJdbcRepository.findTop5ByStatType(startDate, endDate, "VIEW_COUNT", "DAILY")
+                            .stream()
+                            .map(stats -> new VideoViewStats(stats.getVideoId(), stats.getTotalValue(), "VIEW_COUNT", "DAILY", startDate, endDate))
+                            .toList());
 
-                    System.out.println("📌 [ItemReader] 조회된 VIEW_COUNT 데이터 개수: " + viewCountStats.size());
-                    System.out.println("📌 [ItemReader] 조회된 PLAY_TIME 데이터 개수: " + playTimeStats.size());
-                    buffer.addAll(viewCountStats);
-                    buffer.addAll(playTimeStats);
+                    buffer.addAll(dailyViewPlaytimeJdbcRepository.findTop5ByStatType(startDate, endDate, "PLAY_TIME", "DAILY")
+                            .stream()
+                            .map(stats -> new VideoViewStats(stats.getVideoId(), stats.getTotalValue(), "PLAY_TIME", "DAILY", startDate, endDate))
+                            .toList());
+
                     loaded = true;
                 }
                 return nextIndex < buffer.size() ? buffer.get(nextIndex++) : null;
@@ -83,31 +118,98 @@ public class Top5StatisticBatch {
     }
 
     @Bean
-    public ItemProcessor<VideoViewStats, Top5Statistics> dailyTop5Processor() {
+    @StepScope
+    public ItemReader<VideoViewStats> weeklyTop5Reader() {
+        return new ItemReader<>() {
+            private final List<VideoViewStats> buffer = new ArrayList<>();
+            private int nextIndex = 0;
+            private boolean loaded = false;
+            private final LocalDate startDate = LocalDate.now().minusDays(6); // 최근 7일
+            private final LocalDate endDate = LocalDate.now();
+
+            @Override
+            public VideoViewStats read() {
+                if (!loaded) {
+                    buffer.addAll(dailyViewPlaytimeJdbcRepository.findTop5ByStatType(startDate, endDate, "VIEW_COUNT", "WEEKLY")
+                            .stream()
+                            .map(stats -> new VideoViewStats(stats.getVideoId(), stats.getTotalValue(), "VIEW_COUNT", "WEEKLY", startDate, endDate))
+                            .toList());
+
+                    buffer.addAll(dailyViewPlaytimeJdbcRepository.findTop5ByStatType(startDate, endDate, "PLAY_TIME", "WEEKLY")
+                            .stream()
+                            .map(stats -> new VideoViewStats(stats.getVideoId(), stats.getTotalValue(), "PLAY_TIME", "WEEKLY", startDate, endDate))
+                            .toList());
+
+                    loaded = true;
+                }
+                return nextIndex < buffer.size() ? buffer.get(nextIndex++) : null;
+            }
+        };
+    }
+
+    @Bean
+    @StepScope
+    public ItemReader<VideoViewStats> monthlyTop5Reader() {
+        return new ItemReader<>() {
+            private final List<VideoViewStats> buffer = new ArrayList<>();
+            private int nextIndex = 0;
+            private boolean loaded = false;
+            private final LocalDate startDate = LocalDate.now().minusDays(29); // 최근 30일
+            private final LocalDate endDate = LocalDate.now();
+
+            @Override
+            public VideoViewStats read() {
+                if (!loaded) {
+                    buffer.addAll(dailyViewPlaytimeJdbcRepository.findTop5ByStatType(startDate, endDate, "VIEW_COUNT", "MONTHLY")
+                            .stream()
+                            .map(stats -> new VideoViewStats(stats.getVideoId(), stats.getTotalValue(), "VIEW_COUNT", "MONTHLY", startDate, endDate))
+                            .toList());
+
+                    buffer.addAll(dailyViewPlaytimeJdbcRepository.findTop5ByStatType(startDate, endDate, "PLAY_TIME", "MONTHLY")
+                            .stream()
+                            .map(stats -> new VideoViewStats(stats.getVideoId(), stats.getTotalValue(), "PLAY_TIME", "MONTHLY", startDate, endDate))
+                            .toList());
+
+                    loaded = true;
+                }
+                return nextIndex < buffer.size() ? buffer.get(nextIndex++) : null;
+            }
+        };
+    }
+
+
+
+
+    @Bean
+    public ItemProcessor<VideoViewStats, Top5Statistics> top5StatisticsProcessor() {
         return item -> {
-            System.out.println("🔍 [ItemProcessor] 변환 중 - videoId: " + item.getVideoId() + ", totalValue: " + item.getTotalValue());
+            System.out.println("📌 [ItemProcessor] 변환 중 - videoId: " + item.getVideoId() + ", totalValue: " + item.getTotalValue());
+            System.out.println("📌 [ItemProcessor] dateType 값: " + item.getDateType());
+            System.out.println("📌 [ItemProcessor] startDate: " + item.getStartDate() + ", endDate: " + item.getEndDate());
 
             return Top5Statistics.builder()
-                    .date(LocalDate.now())
-                    .dateType("DAILY")
+                    .videoId(item.getVideoId())
+                    .dateType(item.getDateType())
                     .staticType(item.getStatType())
                     .videoId(item.getVideoId())
                     .value(item.getTotalValue())
+                    .startDate(item.getStartDate())
+                    .endDate(item.getEndDate())
                     .build();
         };
     }
 
 
     @Bean
-    public ItemWriter<Top5Statistics> dailyTop5Writer() {
+    public ItemWriter<Top5Statistics> top5StatisticsWriter() {
         return items -> {
-            System.out.println("🔍 [ItemWriter] 저장할 데이터 개수: " + items.size());
+            System.out.println(" [ItemWriter] 저장할 데이터 개수: " + items.size());
 
             if (!items.isEmpty()) {
                 top5StatisticsRepository.saveAll(items);
-                System.out.println("✅ [ItemWriter] 데이터 저장 완료!");
+                System.out.println("[ItemWriter] 데이터 저장 완료!");
             } else {
-                System.out.println("⚠ [ItemWriter] 저장할 데이터가 없음!");
+                System.out.println("[ItemWriter] 저장할 데이터가 없음!");
             }
         };
     }

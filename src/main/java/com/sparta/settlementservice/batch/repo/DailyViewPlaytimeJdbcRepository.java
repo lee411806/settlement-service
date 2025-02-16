@@ -86,23 +86,27 @@ public class DailyViewPlaytimeJdbcRepository {
 
 
     // 여기서 부터 Top5 배치 Jdbc 활용
-    // ✅ 하나의 메서드에서 statType에 따라 쿼리 실행
-    public List<VideoViewStats> findTop5ByStatType(LocalDate targetDate, String statType) {
+    //  하나의 메서드에서 statType에 따라 쿼리 실행
+    public List<VideoViewStats> findTop5ByStatType(LocalDate startDate, LocalDate endDate, String statType, String dateType) {
         String orderByColumn = statType.equals("VIEW_COUNT") ? "SUM(viewCount)" : "SUM(playTime)";
 
         String sql = "SELECT videoId, " + orderByColumn + " AS totalValue " +
                 "FROM dailyVideoView " +
-                "WHERE DATE(createdAt) = ? " +  // ✅ 특정 날짜만 조회하도록 수정
+                "WHERE DATE(createdAt) BETWEEN ? AND ? " +  //  startDate ~ endDate 범위 조회
                 "GROUP BY videoId " +
                 "ORDER BY totalValue DESC " +
-                "LIMIT 5";  // ✅ TOP 5 고정
+                "LIMIT 5";  //  TOP 5
 
         return jdbcTemplate.query(sql, (rs, rowNum) -> new VideoViewStats(
                 rs.getLong("videoId"),
                 rs.getLong("totalValue"),
-                statType
-        ), targetDate);
+                statType,
+                dateType,   // 추가: DAILY, WEEKLY, MONTHLY 값 전달
+                startDate,  // 추가: 시작 날짜
+                endDate     // 추가: 종료 날짜
+        ), startDate, endDate);
     }
+
 
 
 
