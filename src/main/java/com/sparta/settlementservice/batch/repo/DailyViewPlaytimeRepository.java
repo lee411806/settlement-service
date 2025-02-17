@@ -11,9 +11,9 @@ import java.util.Optional;
 @Repository
 public interface DailyViewPlaytimeRepository extends JpaRepository<DailyViewPlaytime, Long> {
 
-    List<DailyViewPlaytime> findByVideoIdAndDate(Long videoId, LocalDate date);
+    List<DailyViewPlaytime> findByVideoIdAndCreatedAt(Long videoId, LocalDate date);
 
     List<DailyViewPlaytime> findByVideoId(Long videoId);
 
-    boolean existsByVideoIdAndDate(Long videoId, LocalDate date);
+    boolean existsByVideoIdAndCreatedAt(Long videoId, LocalDate date);
 }

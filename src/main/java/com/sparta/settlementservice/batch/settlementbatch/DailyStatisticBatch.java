@@ -208,7 +208,7 @@ public class DailyStatisticBatch {
                 });
             }
             for (DailyViewPlaytime item : items) {
-                System.out.println("[Writer] Writing videoId: " + item.getVideoId() + ", date: " + item.getDate());
+                System.out.println("[Writer] Writing videoId: " + item.getVideoId() + ", date: " + item.getCreatedAt());
             }
             // DB에 Bulk 저장
             dailyViewPlaytimeJdbcRepository.saveAllWithDuplicateCheck(new ArrayList<>(consolidatedMap.values()));
