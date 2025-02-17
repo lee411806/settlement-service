@@ -3,7 +3,6 @@ package com.sparta.settlementservice.batch.repo;
 import com.sparta.settlementservice.batch.dto.VideoViewStats;
 import com.sparta.settlementservice.batch.entity.DailyViewPlaytime;
 import com.sparta.settlementservice.streaming.entity.DailyVideoView;
-import org.springframework.data.jpa.repository.Query;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 
@@ -43,14 +42,14 @@ public class DailyViewPlaytimeJdbcRepository {
 
         // SQL 문 작성 (ON DUPLICATE KEY UPDATE 포함)
         String sql = """
-        INSERT INTO dailyViewPlaytime (videoId, date, totalViewCount, totalAdViewCount, totalPlayTime)
-        VALUES (?, ?, ?, ?, ?)
-        ON DUPLICATE KEY UPDATE 
-        date = VALUES(date), 
-        totalViewCount = totalViewCount + VALUES(totalViewCount),
-        totalAdViewCount = totalAdViewCount + VALUES(totalAdViewCount),
-        totalPlayTime = totalPlayTime + VALUES(totalPlayTime)
-    """;
+                    INSERT INTO dailyViewPlaytime (videoId, createdAt, totalViewCount, totalAdViewCount, totalPlayTime)
+                    VALUES (?, ?, ?, ?, ?)
+                    ON DUPLICATE KEY UPDATE 
+                    createdAt = VALUES(createdAt), 
+                    totalViewCount = totalViewCount + VALUES(totalViewCount),
+                    totalAdViewCount = totalAdViewCount + VALUES(totalAdViewCount),
+                    totalPlayTime = totalPlayTime + VALUES(totalPlayTime)
+                """;
 
         // 배치 크기 설정 (예: 1000)
         int batchSize = 8000;
@@ -66,7 +65,7 @@ public class DailyViewPlaytimeJdbcRepository {
                 // 배치 처리
                 jdbcTemplate.batchUpdate(sql, batchItems, batchItems.size(), (ps, item) -> {
                     ps.setLong(1, item.getVideoId());
-                    ps.setObject(2, item.getDate()); // 🔥 `date` 값 추가
+                    ps.setObject(2, item.getCreatedAt()); //  `date` 값 추가
                     ps.setLong(3, item.getTotalViewCount());
                     ps.setLong(4, item.getTotalAdViewCount());
                     ps.setLong(5, item.getTotalPlayTime());
@@ -85,7 +84,7 @@ public class DailyViewPlaytimeJdbcRepository {
     }
 
 
-    // 여기서 부터 Top5 배치 Jdbc 활용
+    // Top5 배치 Jdbc 활용
     //  하나의 메서드에서 statType에 따라 쿼리 실행
     public List<VideoViewStats> findTop5ByStatType(LocalDate startDate, LocalDate endDate, String statType, String dateType) {
         String orderByColumn = statType.equals("VIEW_COUNT") ? "SUM(viewCount)" : "SUM(playTime)";
@@ -107,6 +106,21 @@ public class DailyViewPlaytimeJdbcRepository {
         ), startDate, endDate);
     }
 
+
+    // Settlement 배치 Jdbc 활용
+    public List<DailyViewPlaytime> findByDateBetweenOrderByDate(LocalDate startDate, LocalDate endDate, int pageSize) {
+        String sql = "SELECT * FROM dailyviewplaytime " +  //  테이블명 언더바 제거
+                "WHERE createdAt  BETWEEN ? AND ? " +
+                "ORDER BY createdAt  ASC " +
+                "LIMIT ?";
+
+        return jdbcTemplate.query(sql, (rs, rowNum) -> new DailyViewPlaytime(
+                rs.getLong("videoId"),          //  컬럼명 변경 (video_id → videoId)
+                rs.getDate("createdAt").toLocalDate(),
+                rs.getLong("totalViewCount"),   //  컬럼명 변경 (total_view_count → totalViewCount)
+                rs.getLong("totalAdViewCount")  //  컬럼명 변경 (total_ad_view_count → totalAdViewCount)
+        ), startDate, endDate, pageSize);
+    }
 
 
 
