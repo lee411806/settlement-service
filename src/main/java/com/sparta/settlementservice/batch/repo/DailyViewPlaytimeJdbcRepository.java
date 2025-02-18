@@ -2,6 +2,7 @@ package com.sparta.settlementservice.batch.repo;
 
 import com.sparta.settlementservice.batch.dto.VideoViewStats;
 import com.sparta.settlementservice.batch.entity.DailyViewPlaytime;
+import com.sparta.settlementservice.batch.entity.SettlementResult;
 import com.sparta.settlementservice.streaming.entity.DailyVideoView;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
@@ -108,6 +109,7 @@ public class DailyViewPlaytimeJdbcRepository {
 
 
     // Settlement 배치 Jdbc 활용
+
     public List<DailyViewPlaytime> findByDateBetweenOrderByDate(LocalDate startDate, LocalDate endDate, int pageSize) {
         String sql = "SELECT * FROM dailyviewplaytime " +  //  테이블명 언더바 제거
                 "WHERE createdAt  BETWEEN ? AND ? " +
@@ -121,8 +123,6 @@ public class DailyViewPlaytimeJdbcRepository {
                 rs.getLong("totalAdViewCount")  //  컬럼명 변경 (total_ad_view_count → totalAdViewCount)
         ), startDate, endDate, pageSize);
     }
-
-
 
 
 }
