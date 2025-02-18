@@ -61,6 +61,8 @@ public class SettlementResultBatch {
                 .next(batchExecutionDecider) //  Decider 실행 후 상태 값 확인
                 .on("WEEKLY").to(weeklySettlementStep) //  WEEKLY면 weeklySettlementStep 실행
                 .from(batchExecutionDecider).on("MONTHLY").to(monthlySettlementStep) //  MONTHLY면 monthlySettlementStep 실행
+                .from(batchExecutionDecider).on("DAILY").end() // ✅ DAILY → 바로 종료
+                .from(batchExecutionDecider).on("*").end() //  예상치 못한 상태에서도 Job이 종료되도록 처리
                 .end()
                 .build();
     }
