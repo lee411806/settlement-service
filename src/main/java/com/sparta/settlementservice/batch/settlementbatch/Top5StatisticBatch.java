@@ -48,11 +48,14 @@ public class Top5StatisticBatch {
             Step monthlyTop5Step,
             BatchExecutionDecider batchExecutionDecider) {
 
+
         return new JobBuilder("top5StatisticsBatchJob", jobRepository)
                 .start(dailyTop5Step) // DAILY Step은 항상 실행
                 .next(batchExecutionDecider) // Decider 실행 후 상태 값 확인
                 .on("WEEKLY").to(weeklyTop5Step) // WEEKLY면 weeklyTop5Step 실행
                 .from(batchExecutionDecider).on("MONTHLY").to(monthlyTop5Step) // MONTHLY면 monthlyTop5Step 실행
+                .from(batchExecutionDecider).on("DAILY").end() //  DAILY일 때도 Job 정상 종료
+                .from(batchExecutionDecider).on("*").end() //  예상치 못한 상태에서도 Job이 종료되도록 처리
                 .end()
                 .build();
     }
@@ -183,9 +186,9 @@ public class Top5StatisticBatch {
     @Bean
     public ItemProcessor<VideoViewStats, Top5Statistics> top5StatisticsProcessor() {
         return item -> {
-            System.out.println("📌 [ItemProcessor] 변환 중 - videoId: " + item.getVideoId() + ", totalValue: " + item.getTotalValue());
-            System.out.println("📌 [ItemProcessor] dateType 값: " + item.getDateType());
-            System.out.println("📌 [ItemProcessor] startDate: " + item.getStartDate() + ", endDate: " + item.getEndDate());
+            System.out.println(" [ItemProcessor] 변환 중 - videoId: " + item.getVideoId() + ", totalValue: " + item.getTotalValue());
+            System.out.println(" [ItemProcessor] dateType 값: " + item.getDateType());
+            System.out.println(" [ItemProcessor] startDate: " + item.getStartDate() + ", endDate: " + item.getEndDate());
 
             return Top5Statistics.builder()
                     .videoId(item.getVideoId())
