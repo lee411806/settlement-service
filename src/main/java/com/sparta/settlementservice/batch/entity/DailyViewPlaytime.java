@@ -40,4 +40,12 @@ public class DailyViewPlaytime {
         this.totalViewCount = totalViewCount;
         this.totalAdViewCount = totalAdViewCount;
     }
+
+    public DailyViewPlaytime(long videoId, LocalDate createdAt, long totalViewCount, long totalAdViewCount, long totalPlayTime) {
+        this.videoId = videoId;
+        this.createdAt = createdAt ;
+        this.totalViewCount = totalViewCount;
+        this.totalAdViewCount = totalAdViewCount;
+        this.totalPlayTime = totalPlayTime;
+    }
 }

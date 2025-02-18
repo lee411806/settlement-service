@@ -15,17 +15,18 @@ public class BatchExecutionDecider implements JobExecutionDecider {
     //FlowExecutionStatus: Spring Batch에서 Step의 실행 상태를 결정하는 객체
     @Override
     public FlowExecutionStatus decide(JobExecution jobExecution, StepExecution stepExecution) {
-        LocalDate today = LocalDate.now();
-
+        LocalDate today = LocalDate.of(2025, 3, 1);
+//        LocalDate today = LocalDate.now();
+        System.out.println(" [Decider] 실행됨! JobExecution ID: " + jobExecution.getId());
         if (isMonday(today) && isFirstDayOfMonth(today)) {
             System.out.println(" [Decider] 결과: WEEKLY_MONTHLY");
-            return new FlowExecutionStatus("WEEKLY_MONTHLY"); // ✅ 월요일 + 1일 → 둘 다 실행
+            return new FlowExecutionStatus("WEEKLY_MONTHLY"); //  월요일 + 1일 → 둘 다 실행
         } else if (isFirstDayOfMonth(today)) {
             System.out.println(" [Decider] 결과: MONTHLY");
-            return new FlowExecutionStatus("MONTHLY"); // ✅ 1일이면 MONTHLY 실행
+            return new FlowExecutionStatus("MONTHLY"); //  1일이면 MONTHLY 실행
         } else if (isMonday(today)) {
             System.out.println(" [Decider] 결과: WEEKLY");
-            return new FlowExecutionStatus("WEEKLY"); // ✅ 월요일이면 WEEKLY 실행
+            return new FlowExecutionStatus("WEEKLY"); //  월요일이면 WEEKLY 실행
         }
 
         System.out.println(" [Decider] 결과: DAILY");

@@ -6,13 +6,18 @@ import com.sparta.settlementservice.batch.dto.SettlementStats;
 import com.sparta.settlementservice.batch.entity.DailyViewPlaytime;
 import com.sparta.settlementservice.batch.entity.SettlementResult;
 import com.sparta.settlementservice.batch.repo.DailyViewPlaytimeJdbcRepository;
+import com.sparta.settlementservice.batch.repo.SettlementResultJdbcRepository;
 import com.sparta.settlementservice.batch.repo.SettlementResultRepository;
+import org.springframework.batch.core.ExitStatus;
 import org.springframework.batch.core.Job;
 import org.springframework.batch.core.Step;
+import org.springframework.batch.core.StepExecution;
+import org.springframework.batch.core.annotation.AfterStep;
 import org.springframework.batch.core.configuration.annotation.StepScope;
 import org.springframework.batch.core.job.builder.JobBuilder;
 import org.springframework.batch.core.repository.JobRepository;
 import org.springframework.batch.core.step.builder.StepBuilder;
+import org.springframework.batch.item.Chunk;
 import org.springframework.batch.item.ItemProcessor;
 import org.springframework.batch.item.ItemReader;
 import org.springframework.batch.item.ItemWriter;
@@ -25,19 +30,22 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 @Configuration
 public class SettlementResultBatch {
 
     private final DailyViewPlaytimeJdbcRepository dailyViewPlaytimeJdbcRepository;
     private final SettlementResultRepository settlementResultRepository;
+    private final SettlementResultJdbcRepository settlementResultJdbcRepository;
 
     public SettlementResultBatch(
             DailyViewPlaytimeJdbcRepository dailyViewPlaytimeJdbcRepository
-            , SettlementResultRepository settlementResultRepository) {
+            , SettlementResultRepository settlementResultRepository
+            , SettlementResultJdbcRepository settlementResultJdbcRepository
+    ) {
         this.dailyViewPlaytimeJdbcRepository = dailyViewPlaytimeJdbcRepository;
         this.settlementResultRepository = settlementResultRepository;
+        this.settlementResultJdbcRepository = settlementResultJdbcRepository;
     }
 
     @Bean
@@ -52,7 +60,7 @@ public class SettlementResultBatch {
                 .start(dailySettlementStep) //  DAILY Step은 항상 실행
                 .next(batchExecutionDecider) //  Decider 실행 후 상태 값 확인
                 .on("WEEKLY").to(weeklySettlementStep) //  WEEKLY면 weeklySettlementStep 실행
-                .from(batchExecutionDecider).on("MONTHLY").to(monthlySettlementStep) // ✅ MONTHLY면 monthlySettlementStep 실행
+                .from(batchExecutionDecider).on("MONTHLY").to(monthlySettlementStep) //  MONTHLY면 monthlySettlementStep 실행
                 .end()
                 .build();
     }
@@ -60,7 +68,7 @@ public class SettlementResultBatch {
     @Bean
     public Step dailySettlementStep(JobRepository jobRepository, PlatformTransactionManager transactionManager) {
         return new StepBuilder("dailySettlementStep", jobRepository)
-                .<SettlementStats, SettlementResult>chunk(100, transactionManager) // ✅ DTO 및 엔티티 변경
+                .<SettlementStats, SettlementResult>chunk(4000, transactionManager) //  DTO 및 엔티티 변경
                 .reader(dailySettlementReader()) //  Reader 변경
                 .processor(settlementProcessor()) //  Processor 변경
                 .writer(settlementWriter()) //  Writer 변경
@@ -70,7 +78,7 @@ public class SettlementResultBatch {
     @Bean
     public Step weeklySettlementStep(JobRepository jobRepository, PlatformTransactionManager transactionManager) {
         return new StepBuilder("weeklySettlementStep", jobRepository)
-                .<SettlementStats, SettlementResult>chunk(100, transactionManager)
+                .<SettlementStats, SettlementResult>chunk(4000, transactionManager)
                 .reader(weeklySettlementReader())
                 .processor(settlementProcessor()) //  동일한 Processor 사용
                 .writer(settlementWriter()) //  동일한 Writer 사용
@@ -80,7 +88,7 @@ public class SettlementResultBatch {
     @Bean
     public Step monthlySettlementStep(JobRepository jobRepository, PlatformTransactionManager transactionManager) {
         return new StepBuilder("monthlySettlementStep", jobRepository)
-                .<SettlementStats, SettlementResult>chunk(100, transactionManager)
+                .<SettlementStats, SettlementResult>chunk(4000, transactionManager)
                 .reader(monthlySettlementReader())
                 .processor(settlementProcessor()) //  동일한 Processor 사용
                 .writer(settlementWriter()) //  동일한 Writer 사용
@@ -93,83 +101,99 @@ public class SettlementResultBatch {
     public ItemReader<SettlementStats> dailySettlementReader() {
         return new ItemReader<>() {
             private static final int PAGE_SIZE = 4000;
-            private final LocalDate startDate = LocalDate.now().minusDays(1);
+            private final LocalDate startDate = LocalDate.now(); //
             private final LocalDate endDate = LocalDate.now();
-            private LocalDate currentDate = startDate;
+
+
             private List<DailyViewPlaytime> buffer = new ArrayList<>();
-            private int index = 0;
+
+            boolean flag = false;
 
             @Override
             public SettlementStats read() {
-                // 모든 날짜 처리가 끝났으면 종료
-                if (currentDate.isAfter(endDate)) return null;
 
-                // 버퍼가 비었으면 새 데이터를 가져옴
-                if (index >= buffer.size()) {
-                    buffer = dailyViewPlaytimeJdbcRepository.findByDateBetweenOrderByDate(currentDate, endDate, PAGE_SIZE);
-                    index = 0;
+                if (!flag) {
+                    buffer = dailyViewPlaytimeJdbcRepository.findByDateBetweenOrderByDate(startDate, endDate, PAGE_SIZE);
+                }
+                flag = true;
 
-                    // 현재 시점에 데이터가 없으면 다음 날짜로 이동
-                    if (buffer.isEmpty()) {
-                        currentDate = currentDate.plusDays(1);
-                        return read(); // 재귀 호출로 다음 날짜 데이터 시도
-                    }
+                if (buffer.isEmpty()) {
+                    return null;
                 }
 
-                // 버퍼에서 하나씩 꺼내 SettlementStats로 변환
-                DailyViewPlaytime dailyViewPlaytime = buffer.get(index++);
+                //  로그 출력 (데이터 개수 확인)
+                System.out.println(" [Reader] 조회된 데이터 개수: " + buffer.size());
 
+
+                return convertToSettlementStats(buffer.remove(0));
+            }
+
+            private SettlementStats convertToSettlementStats(DailyViewPlaytime dailyViewPlaytime) {
                 return new SettlementStats(
-                        dailyViewPlaytime.getVideoId(),
-                        dailyViewPlaytime.getTotalViewCount(),
-                        dailyViewPlaytime.getTotalAdViewCount(),
-                        "DAILY", // 정산 타입 (예: DAILY)
-                        currentDate, // 시작 날짜
-                        currentDate // 종료 날짜 (일 단위니까 동일)
+                        dailyViewPlaytime.getVideoId(),  //  비디오 ID
+                        dailyViewPlaytime.getTotalViewCount(),  //  총 조회수
+                        dailyViewPlaytime.getTotalAdViewCount(),  //  총 광고 조회수
+                        "DAILY",  //  정산 타입 고정
+                        dailyViewPlaytime.getCreatedAt(),  //  시작 날짜 (createdAt과 동일)
+                        dailyViewPlaytime.getCreatedAt()   //  종료 날짜 (하루 단위이므로 동일)
                 );
             }
+
         };
     }
+
 
     @Bean
     @StepScope
     public ItemReader<SettlementStats> weeklySettlementReader() {
         return new ItemReader<>() {
             private static final int PAGE_SIZE = 4000;
-            private final LocalDate startDate = LocalDate.now().minusWeeks(1);
             private final LocalDate endDate = LocalDate.now();
-            private List<SettlementStats> buffer = new ArrayList<>(); // ✅ SettlementStats 타입으로 변경
-            private int index = 0;
+            //다음날 새벽에 돌려야해서 원래 +1 해줬으나 , between으로 데이터 조건을 db에서 구분하기 때문에 원래날짜로 설정
+            private LocalDate startDate = endDate.minusDays(6); //  월요일
+            private LocalDate saveStartDate = endDate.minusDays(6);
+
+            private List<DailyViewPlaytime> buffer = new ArrayList<>();
+            boolean flag = false;
+
 
             @Override
             public SettlementStats read() {
-                if (index >= buffer.size()) {
-                    buffer.clear();
-
-                    // 🔥 DB에서 `DailyViewPlaytime` 조회 후 `SettlementStats`로 변환
-                    List<DailyViewPlaytime> rawData = dailyViewPlaytimeJdbcRepository.findByDateBetweenOrderByDate(startDate, endDate, PAGE_SIZE);
-
-                    if (rawData.isEmpty()) return null;
-
-                    buffer = rawData.stream()
-                            .map(playtime -> new SettlementStats(
-                                    playtime.getVideoId(),
-                                    playtime.getTotalViewCount(),
-                                    playtime.getTotalAdViewCount(),
-                                    "WEEKLY",
-                                    startDate,
-                                    endDate
-                            ))
-                            .collect(Collectors.toList()); // ✅ 변환 후 저장
-
-                    index = 0;
+                if (!flag) {
+                    buffer = dailyViewPlaytimeJdbcRepository.findByDateBetweenOrderByDate(startDate, endDate, PAGE_SIZE);
+                    flag = true;
+                }
+                if (startDate.isAfter(endDate.minusDays(1))) {
+                    System.out.println(" [Weekly Reader] 모든 날짜 처리 완료. Step 종료.");
+                    return null;
+                } else {
+                    if (buffer.isEmpty()) {
+                        startDate = startDate.plusDays(1);
+                        System.out.println(startDate);
+                        buffer = dailyViewPlaytimeJdbcRepository.findByDateBetweenOrderByDate(startDate, endDate, PAGE_SIZE);
+                    }
                 }
 
-                return index < buffer.size() ? buffer.get(index++) : null;
+
+                //  로그 출력 (데이터 개수 확인)
+                return convertToSettlementStats(buffer.remove(0),saveStartDate, endDate);
             }
+
+            private SettlementStats convertToSettlementStats(DailyViewPlaytime dailyViewPlaytime,LocalDate saveStartDate,LocalDate endDate) {
+
+
+                return new SettlementStats(
+                        dailyViewPlaytime.getVideoId(),  //  비디오 ID
+                        dailyViewPlaytime.getTotalViewCount(),  //  총 조회수
+                        dailyViewPlaytime.getTotalAdViewCount(),  //  총 광고 조회수
+                        "WEEKLY",  //  정산 타입 고정
+                        saveStartDate,   // 시작 날짜
+                        endDate  //  종료 날짜 (하루 단위이므로 동일)
+                );
+            }
+
         };
     }
-
 
 
     @Bean
@@ -177,44 +201,57 @@ public class SettlementResultBatch {
     public ItemReader<SettlementStats> monthlySettlementReader() {
         return new ItemReader<>() {
             private static final int PAGE_SIZE = 4000;
-            private final LocalDate startDate = LocalDate.now().minusMonths(1); // 1개월 전
             private final LocalDate endDate = LocalDate.now();
-            private LocalDate currentDate = startDate;
+            //  30일 단위로 데이터를 가져오기 위해 startDate 조정
+            private LocalDate startDate = endDate.minusDays(29); // 30일 전부터 시작
+            private LocalDate saveStartDate = endDate.minusDays(29);
+
+            // videoId별로 누적된 데이터를 저장하는 Map
+            Map<Long, SettlementStats> videoStatsMap = new HashMap<>();
+
             private List<DailyViewPlaytime> buffer = new ArrayList<>();
-            private int index = 0;
+            boolean flag = false;
 
             @Override
             public SettlementStats read() {
-                if (currentDate.isAfter(endDate)) return null;
+                if (!flag) {
+                    buffer = dailyViewPlaytimeJdbcRepository.findByDateBetweenOrderByDate(startDate, endDate, PAGE_SIZE);
+                    flag = true;
+                }
 
-                if (index >= buffer.size()) {
-                    buffer = dailyViewPlaytimeJdbcRepository.findByDateBetweenOrderByDate(currentDate, endDate, PAGE_SIZE);
-                    index = 0;
-
+                if (startDate.isAfter(endDate.minusDays(1))) {
+                    System.out.println(" [Monthly Reader] 모든 날짜 처리 완료. Step 종료.");
+                    return null;
+                } else {
                     if (buffer.isEmpty()) {
-                        currentDate = currentDate.plusDays(1);
-                        return read();
+                        startDate = startDate.plusDays(1);
+                        System.out.println(startDate);
+                        buffer = dailyViewPlaytimeJdbcRepository.findByDateBetweenOrderByDate(startDate, endDate, PAGE_SIZE);
                     }
                 }
 
-                DailyViewPlaytime dailyViewPlaytime = buffer.get(index++);
+                //  로그 출력 (데이터 개수 확인)
+                return convertToSettlementStats(buffer.remove(0),saveStartDate, endDate);
+            }
 
+            private SettlementStats convertToSettlementStats(DailyViewPlaytime dailyViewPlaytime,LocalDate saveStartDate,LocalDate endDate) {
                 return new SettlementStats(
-                        dailyViewPlaytime.getVideoId(),
-                        dailyViewPlaytime.getTotalViewCount(),
-                        dailyViewPlaytime.getTotalAdViewCount(),
-                        "MONTHLY", // 정산 타입 (월간)
-                        startDate, // 시작 날짜 (1개월 전)
-                        endDate    // 종료 날짜 (오늘)
+                        dailyViewPlaytime.getVideoId(),  //  비디오 ID
+                        dailyViewPlaytime.getTotalViewCount(),  //  총 조회수
+                        dailyViewPlaytime.getTotalAdViewCount(),  //  총 광고 조회수
+                        "MONTHLY",  //  정산 타입을 "MONTHLY"로 설정
+                        saveStartDate,  //  시작 날짜 (createdAt과 동일)
+                        endDate   //  종료 날짜 (하루 단위이므로 동일)
                 );
             }
         };
     }
 
+
     @Bean
     public ItemProcessor<SettlementStats, SettlementResult> settlementProcessor() {
         return stats -> {
-            System.out.println("[ItemProcessor] 처리 중 - videoId: " + stats.getVideoId());
+//            System.out.println("[ItemProcessor] 처리 중 - videoId: " + stats.getVideoId());
 
             SettlementCalculator calculator = new SettlementCalculator(); // 직접 객체 생성
 
@@ -233,14 +270,38 @@ public class SettlementResultBatch {
 
     @Bean
     public ItemWriter<SettlementResult> settlementWriter() {
-        return items -> {
-            System.out.println("[ItemWriter] 저장할 데이터 개수: " + items.size());
+        return new ItemWriter<SettlementResult>() {
+            private final Map<Long, SettlementResult> videoStatsMap = new HashMap<>();
 
-            if (!items.isEmpty()) {
-                settlementResultRepository.saveAll(items);
-                System.out.println("[ItemWriter] 데이터 저장 완료!");
-            } else {
-                System.out.println("[ItemWriter] 저장할 데이터가 없음!");
+            @Override
+            public void write(Chunk<? extends SettlementResult> chunk) {
+                //  1. `chunk`로 받은 데이터 리스트에서 하나씩 처리
+                for (SettlementResult stats : chunk.getItems()) {
+                    Long videoId = stats.getVideoId();
+
+                    //  2. 이미 videoId가 존재하면 기존 데이터에 값 합산
+                    if (videoStatsMap.containsKey(videoId)) {
+                        SettlementResult existingStats = videoStatsMap.get(videoId);
+                        existingStats.setVideoRevenue(existingStats.getVideoRevenue() + stats.getVideoRevenue());
+                        existingStats.setAdRevenue(existingStats.getAdRevenue() + stats.getAdRevenue());
+                        existingStats.setTotalRevenue(existingStats.getTotalRevenue() + stats.getTotalRevenue());
+                    } else {
+                        //  3. videoId가 처음 등장하면 새롭게 추가
+                        videoStatsMap.put(videoId, stats);
+                    }
+                }
+            }
+
+            //  Step이 끝난 후 최종 저장
+            @AfterStep
+            public ExitStatus afterStep(StepExecution stepExecution) {
+
+                List<SettlementResult> finalResults = new ArrayList<>(videoStatsMap.values());
+                settlementResultJdbcRepository.saveAllWithDuplicateCheckSettlement(finalResults);
+                System.out.println("[ItemWriter] 최종 저장 완료! 저장된 개수: " + finalResults.size());
+                videoStatsMap.clear();
+
+                return ExitStatus.COMPLETED;
             }
         };
     }
