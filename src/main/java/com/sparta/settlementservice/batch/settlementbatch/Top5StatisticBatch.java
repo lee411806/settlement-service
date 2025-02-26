@@ -5,6 +5,7 @@ import com.sparta.settlementservice.batch.dto.VideoViewStats;
 import com.sparta.settlementservice.batch.entity.Top5Statistics;
 import com.sparta.settlementservice.batch.repo.DailyViewPlaytimeJdbcRepository;
 import com.sparta.settlementservice.batch.repo.Top5StatisticsRepository;
+import net.minidev.json.JSONUtil;
 import org.springframework.batch.core.Job;
 import org.springframework.batch.core.Step;
 import org.springframework.batch.core.configuration.annotation.StepScope;
@@ -63,7 +64,7 @@ public class Top5StatisticBatch {
     @Bean
     public Step dailyTop5Step(JobRepository jobRepository, PlatformTransactionManager transactionManager) {
         return new StepBuilder("dailyTop5Step", jobRepository)
-                .<VideoViewStats, Top5Statistics>chunk(100, transactionManager)
+                .<VideoViewStats, Top5Statistics>chunk(5, transactionManager)
                 .reader(dailyTop5Reader())
                 .processor(top5StatisticsProcessor())
                 .writer(top5StatisticsWriter()) //
@@ -73,7 +74,7 @@ public class Top5StatisticBatch {
     @Bean
     public Step weeklyTop5Step(JobRepository jobRepository, PlatformTransactionManager transactionManager) {
         return new StepBuilder("weeklyTop5Step", jobRepository)
-                .<VideoViewStats, Top5Statistics>chunk(100, transactionManager)
+                .<VideoViewStats, Top5Statistics>chunk(5, transactionManager)
                 .reader(weeklyTop5Reader())
                 .processor(top5StatisticsProcessor()) // 통합된 Processor 사용
                 .writer(top5StatisticsWriter()) // 통합된 Writer 사용
@@ -83,7 +84,7 @@ public class Top5StatisticBatch {
     @Bean
     public Step monthlyTop5Step(JobRepository jobRepository, PlatformTransactionManager transactionManager) {
         return new StepBuilder("monthlyTop5Step", jobRepository)
-                .<VideoViewStats, Top5Statistics>chunk(100, transactionManager)
+                .<VideoViewStats, Top5Statistics>chunk(5, transactionManager)
                 .reader(monthlyTop5Reader())
                 .processor(top5StatisticsProcessor()) // 통합된 Processor 사용
                 .writer(top5StatisticsWriter()) // 통합된 Writer 사용
@@ -133,19 +134,40 @@ public class Top5StatisticBatch {
             @Override
             public VideoViewStats read() {
                 if (!loaded) {
-                    buffer.addAll(dailyViewPlaytimeJdbcRepository.findTop5ByStatType(startDate, endDate, "VIEW_COUNT", "WEEKLY")
-                            .stream()
-                            .map(stats -> new VideoViewStats(stats.getVideoId(), stats.getTotalValue(), "VIEW_COUNT", "WEEKLY", startDate, endDate))
-                            .toList());
+                    System.out.println("[ItemReader] 주간 Top5 데이터 로딩 시작...");
+                    System.out.println("[ItemReader] 조회 기간: " + startDate + " ~ " + endDate);
 
-                    buffer.addAll(dailyViewPlaytimeJdbcRepository.findTop5ByStatType(startDate, endDate, "PLAY_TIME", "WEEKLY")
+                    List<VideoViewStats> viewCountStats = dailyViewPlaytimeJdbcRepository.findTop5ByStatType(startDate, endDate, "VIEW_COUNT", "WEEKLY")
                             .stream()
-                            .map(stats -> new VideoViewStats(stats.getVideoId(), stats.getTotalValue(), "PLAY_TIME", "WEEKLY", startDate, endDate))
-                            .toList());
+                            .map(stats -> {
+                                System.out.println("[ItemReader] VIEW_COUNT 변환 중 - videoId: " + stats.getVideoId() + ", totalValue: " + stats.getTotalValue());
+                                return new VideoViewStats(stats.getVideoId(), stats.getTotalValue(), "VIEW_COUNT", "WEEKLY", startDate, endDate);
+                            })
+                            .toList();
 
+                    List<VideoViewStats> playTimeStats = dailyViewPlaytimeJdbcRepository.findTop5ByStatType(startDate, endDate, "PLAY_TIME", "WEEKLY")
+                            .stream()
+                            .map(stats -> {
+                                System.out.println("[ItemReader] PLAY_TIME 변환 중 - videoId: " + stats.getVideoId() + ", totalValue: " + stats.getTotalValue());
+                                return new VideoViewStats(stats.getVideoId(), stats.getTotalValue(), "PLAY_TIME", "WEEKLY", startDate, endDate);
+                            })
+                            .toList();
+
+                    buffer.addAll(viewCountStats);
+                    buffer.addAll(playTimeStats);
                     loaded = true;
+
+                    System.out.println("[ItemReader] 최종 로드된 데이터 개수: " + buffer.size());
                 }
-                return nextIndex < buffer.size() ? buffer.get(nextIndex++) : null;
+
+                if (nextIndex < buffer.size()) {
+                    VideoViewStats item = buffer.get(nextIndex++);
+                    System.out.println("[ItemReader] 반환할 데이터 - videoId: " + item.getVideoId() + ", totalValue: " + item.getTotalValue() + ", statType: " + item.getStatType());
+                    return item;
+                } else {
+                    System.out.println("[ItemReader] 데이터 없음 (null 반환)");
+                    return null;
+                }
             }
         };
     }

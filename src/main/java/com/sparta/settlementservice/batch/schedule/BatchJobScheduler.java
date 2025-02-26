@@ -62,4 +62,23 @@ public class BatchJobScheduler {
                 .toJobParameters();
     }
 
+
+//    @Scheduled(initialDelay = 4000, fixedRate = Long.MAX_VALUE)// 매일 새벽 1시 실행
+//    public void runTop5StatisticsBatch() {
+//        try {
+//            System.out.println("[Batch Scheduler] Top5 통계 배치 실행 시작 - " + LocalDateTime.now());
+//
+//            JobParameters jobParameters = new JobParametersBuilder()
+//                    .addLong("time", System.currentTimeMillis()) // 중복 실행 방지용 파라미터
+//                    .toJobParameters();
+//
+//            jobLauncher.run(top5StatisticsBatchJob, jobParameters);
+//
+//            System.out.println("[Batch Scheduler] Top5 통계 배치 실행 완료 - " + LocalDateTime.now());
+//        } catch (Exception e) {
+//            System.err.println("[Batch Scheduler] Top5 통계 배치 실행 중 오류 발생: " + e.getMessage());
+//            e.printStackTrace();
+//        }
+//    }
+
 }
