@@ -59,7 +59,7 @@ spring:
             user-name-attribute: response
 
 jwt:
-  secret: vmfhaltmskdlstkfkdgodyroqkfwkdbalroqkfwkdbalaaaaaaaaaaaaaaaabbbbb
+  secret: ${JWT_SECRET}
 
 logging:
   level:
