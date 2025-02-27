@@ -23,35 +23,35 @@ public class BatchJobScheduler {
     private final Job top5StatisticsBatchJob;
     private final Job settlementResultBatchJob;
 
-    @Scheduled(initialDelay = 4000, fixedRate = Long.MAX_VALUE)
-    public void runBatchJobs() {
-        try {
-            System.out.println("[Batch Scheduler] 정산 배치 시작");
-
-            // Daily Statistics Job 실행
-            JobExecution dailyExecution = jobLauncher.run(dailyStatisticsJob, createUniqueJobParameters());
-
-            if (dailyExecution.getStatus() == BatchStatus.COMPLETED) {
-                System.out.println("dailyStatisticsJob 완료. top5StatisticsBatchJob 실행 시작...");
-
-                // TOP 5 Statistics Job 실행
-                JobExecution top5Execution = jobLauncher.run(top5StatisticsBatchJob, createUniqueJobParameters());
-
-                if (top5Execution.getStatus() == BatchStatus.COMPLETED) {
-                    System.out.println("top5StatisticsBatchJob 완료. settlementResultBatchJob 실행 시작...");
-
-                    // Settlement Result Batch Job 실행
-                    JobExecution settlementExecution = jobLauncher.run(settlementResultBatchJob, createUniqueJobParameters());
-
-                    if (settlementExecution.getStatus() == BatchStatus.COMPLETED) {
-                        System.out.println("모든 정산 배치 완료!");
-                    }
-                }
-            }
-        } catch (Exception e) {
-            System.out.println("배치 실행 중 오류 발생: " + e.getMessage());
-        }
-    }
+//    @Scheduled(initialDelay = 4000, fixedRate = Long.MAX_VALUE)
+//    public void runBatchJobs() {
+//        try {
+//            System.out.println("[Batch Scheduler] 정산 배치 시작");
+//
+//            // Daily Statistics Job 실행
+//            JobExecution dailyExecution = jobLauncher.run(dailyStatisticsJob, createUniqueJobParameters());
+//
+//            if (dailyExecution.getStatus() == BatchStatus.COMPLETED) {
+//                System.out.println("dailyStatisticsJob 완료. top5StatisticsBatchJob 실행 시작...");
+//
+//                // TOP 5 Statistics Job 실행
+//                JobExecution top5Execution = jobLauncher.run(top5StatisticsBatchJob, createUniqueJobParameters());
+//
+//                if (top5Execution.getStatus() == BatchStatus.COMPLETED) {
+//                    System.out.println("top5StatisticsBatchJob 완료. settlementResultBatchJob 실행 시작...");
+//
+//                    // Settlement Result Batch Job 실행
+//                    JobExecution settlementExecution = jobLauncher.run(settlementResultBatchJob, createUniqueJobParameters());
+//
+//                    if (settlementExecution.getStatus() == BatchStatus.COMPLETED) {
+//                        System.out.println("모든 정산 배치 완료!");
+//                    }
+//                }
+//            }
+//        } catch (Exception e) {
+//            System.out.println("배치 실행 중 오류 발생: " + e.getMessage());
+//        }
+//    }
 
     /**
      * Job 실행 시마다 새로운 JobParameters 생성 (timestamp 적용)

@@ -23,7 +23,8 @@ public class SettlementController {
     public ResponseEntity<List<SettlementResult>> getSettlement(
             @PathVariable String dateType,
             @PathVariable String date) {
-
+        System.out.println("Received dateType: " + dateType);  // 로그 추가
+        System.out.println("Received date: " + date);  // 로그 추가
         LocalDate startDate = LocalDate.parse(date);
         List<SettlementResult> settlementList = settlementService.getSettlement(dateType, startDate);
 

@@ -1,0 +1,33 @@
+version: '3.8'
+
+services:
+  settlement-service:
+    image: settlement-service
+    container_name: settlement-service
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080"
+    env_file:
+      - .env   # 환경 변수 파일 로드
+    environment:
+      SPRING_APPLICATION_NAME: settlement-service
+      SPRING_DATASOURCE_URL: jdbc:mysql://db:3306/settlementdb
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: manager
+      SPRING_DATASOURCE_DRIVER_CLASS_NAME: com.mysql.cj.jdbc.Driver
+      SPRING_DATA_REDIS_HOST: redis
+      SPRING_DATA_REDIS_PORT: 6379
+      SPRING_JPA_HIBERNATE_DDL_AUTO: update
+      SPRING_JPA_PROPERTIES_HIBERNATE_SHOW_SQL: true
+      SPRING_JPA_PROPERTIES_HIBERNATE_FORMAT_SQL: true
+      SPRING_JPA_PROPERTIES_HIBERNATE_USE_SQL_COMMENTS: true
+      SPRING_BATCH_JOB_ENABLED: false
+      SPRING_BATCH_JDBC_INITIALIZE_SCHEMA: always
+      SPRING_BATCH_JDBC_SCHEMA: classpath:org/springframework/batch/core/schema-mysql.sql
+      LOGGING_LEVEL_ORG_SPRINGFRAMEWORK_CACHE: trace
+      JWT_SECRET: ${JWT_SECRET}   # .env에서 불러오기
+    depends_on:
+      - db
+      - redis

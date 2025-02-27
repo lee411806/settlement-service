@@ -18,7 +18,8 @@ public class SettlementService {
 
     public List<SettlementResult> getSettlement(String dateType, LocalDate startDate) { // Settlement → SettlementResult
         LocalDate start, end;
-
+        System.out.println(dateType);
+        System.out.println(startDate);
         if ("DAILY".equalsIgnoreCase(dateType)) {
             start = startDate;
             end = startDate;
