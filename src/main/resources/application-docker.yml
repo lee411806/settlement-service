@@ -3,14 +3,14 @@ spring:
     name: settlement-service
 
   datasource:
-    url: jdbc:mysql://localhost:3306/settlementdb
+    url: jdbc:mysql://mysql-db:3306/settlementdb
     username: root
     password: manager
     driver-class-name: com.mysql.cj.jdbc.Driver
 
   data:
     redis:
-      host: localhost
+      host: redis
       port: 6379
 
   jpa:
@@ -60,6 +60,7 @@ spring:
 
 jwt:
   secret: ${JWT_SECRET:default_secret}
+
 logging:
   level:
     org.springframework.cache: trace # Redis 관련 로깅 레벨 설정
