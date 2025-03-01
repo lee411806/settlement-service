@@ -23,15 +23,14 @@ import java.util.Date;
 @Setter  //  yml 값을 주입받기 위해 Setter 필요
 public class JWTUtil {
 
-    @Value("${jwt.secret}")
     private String secret;  //  yml에서 주입될 필드
     private SecretKey secretKey;
-
     private static final String COOKIE_NAME = "Authorization";
 
     @PostConstruct
     public void init() {  //  yml 값이 설정된 이후 실행되는 초기화 메서드
         this.secretKey = new SecretKeySpec(secret.getBytes(StandardCharsets.UTF_8), Jwts.SIG.HS256.key().build().getAlgorithm());
+        System.out.println("JWT SECRET LOADED: " + secret);  // 확인용 로그
     }
 
     //  쿠키에서 JWT 가져오는 메서드
