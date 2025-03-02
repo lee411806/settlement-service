@@ -1,12 +1,49 @@
 services:
-  db:
-    image: mysql:8
+  db:  # Master
+    image: mysql:8.3  # MySQL 버전 8.3으로 명시
     container_name: mysql-db
     environment:
       MYSQL_ROOT_PASSWORD: manager
       MYSQL_DATABASE: settlementdb
     ports:
       - "3306:3306"
+    command: >
+      --server-id=1
+      --log-bin=mysql-bin
+      --binlog-do-db=settlementdb
+      --binlog-format=ROW
+      --gtid-mode=ON
+      --enforce-gtid-consistency=ON
+    volumes:
+      - master_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  mysql-slave:  # Slave
+    image: mysql:8.3  # MySQL 버전 8.3으로 명시
+    container_name: mysql-slave
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: manager
+      MYSQL_DATABASE: settlementdb
+    ports:
+      - "3307:3306"
+    command: >
+      --server-id=2
+      --relay-log=mysql-relay-bin
+      --log-bin=mysql-bin
+      --binlog-format=ROW
+      --gtid-mode=ON
+      --enforce-gtid-consistency=ON
+      --replicate-do-db=settlementdb
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - slave_data:/var/lib/mysql
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
       interval: 10s
@@ -25,7 +62,7 @@ services:
       retries: 3
 
   settlement-service:
-    image: openjdk:17-jdk-slim  # JDK 17 컨테이너 사용 (Dockerfile 없이 실행)
+    image: openjdk:17-jdk-slim
     container_name: settlement-service
     ports:
       - "8080:8080"
@@ -37,22 +74,26 @@ services:
       SPRING_DATASOURCE_DRIVER_CLASS_NAME: com.mysql.cj.jdbc.Driver
       SPRING_DATA_REDIS_HOST: redis
       SPRING_DATA_REDIS_PORT: 6379
-      SPRING_JPA_HIBERNATE_DDL_AUTO: update  # 운영에서는 validate 또는 none 추천
+      SPRING_JPA_HIBERNATE_DDL_AUTO: update
       SPRING_JPA_PROPERTIES_HIBERNATE_SHOW_SQL: true
       SPRING_JPA_PROPERTIES_HIBERNATE_FORMAT_SQL: true
       SPRING_JPA_PROPERTIES_HIBERNATE_USE_SQL_COMMENTS: true
       SPRING_BATCH_JOB_ENABLED: false
       SPRING_BATCH_JDBC_INITIALIZE_SCHEMA: always
-      SPRING_BATCH_JDBC_SCHEMA: classpath:org/springframework/batch/core/schema-mysql.sql  # 존재 여부 확인 필요
+      SPRING_BATCH_JDBC_SCHEMA: classpath:org/springframework/batch/core/schema-mysql.sql
       LOGGING_LEVEL_ORG_SPRINGFRAMEWORK_CACHE: trace
       JWT_SECRET: ${JWT_SECRET}
-      SPRING_CONFIG_LOCATION: classpath:/application-docker.yml  # Docker에서 application-docker.yml만 사용
+      SPRING_CONFIG_LOCATION: classpath:/application-docker.yml
     volumes:
-      - ./build/libs/settlement-service-0.0.1-SNAPSHOT.jar:/app/app.jar  # JAR 파일 마운트
+      - ./build/libs/settlement-service-0.0.1-SNAPSHOT.jar:/app/app.jar
     working_dir: /app
-    entrypoint: ["java", "-jar", "app.jar"]  # JAR 실행
+    entrypoint: ["java", "-jar", "app.jar"]
     depends_on:
       db:
         condition: service_healthy
       redis:
         condition: service_healthy
+
+volumes:
+  master_data:
+  slave_data:
