@@ -1,8 +1,7 @@
-package com.sparta.settlementservice.batch.repo;
+package com.sparta.settlementservice.batch.repo.master;
 
 import com.sparta.settlementservice.batch.dto.VideoViewStats;
 import com.sparta.settlementservice.batch.entity.DailyViewPlaytime;
-import com.sparta.settlementservice.batch.entity.SettlementResult;
 import com.sparta.settlementservice.streaming.entity.DailyVideoView;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;

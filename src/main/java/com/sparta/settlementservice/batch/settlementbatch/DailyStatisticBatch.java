@@ -2,10 +2,8 @@ package com.sparta.settlementservice.batch.settlementbatch;
 
 import com.sparta.settlementservice.batch.config.VideoIdPartitioner;
 import com.sparta.settlementservice.batch.entity.DailyViewPlaytime;
-import com.sparta.settlementservice.batch.repo.DailyViewPlaytimeJdbcRepository;
-import com.sparta.settlementservice.batch.repo.DailyViewPlaytimeRepository;
+import com.sparta.settlementservice.batch.repo.master.DailyViewPlaytimeJdbcRepository;
 import com.sparta.settlementservice.streaming.entity.DailyVideoView;
-import com.sparta.settlementservice.streaming.repository.DailyVideoViewRepository;
 import org.springframework.batch.core.Job;
 import org.springframework.batch.core.Step;
 import org.springframework.batch.core.configuration.annotation.JobScope;
@@ -23,7 +21,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.*;
 import org.springframework.core.task.TaskExecutor;
-import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.transaction.PlatformTransactionManager;
 
 import java.time.LocalDate;
@@ -80,7 +77,7 @@ public class DailyStatisticBatch {
         return new StepBuilder("partitionedDailyStatisticsStep", jobRepository)
                 .partitioner("dailyStatisticsStep", videoIdPartitioner()) // 파티션 설정
                 .step(dailyStatisticsStep()) // 실행할 step 지정
-                .partitionHandler(partitionHandler(taskExecutor, dailyStatisticsStep())) // 병렬 실행
+                .partitionHandler(partitionHandler(taskExecutor, dailyStatisticsStep())) // 병렬 실행 (executor가 실제로 스텝 실행)
                 .gridSize(4) // 병렬 처리 수 지정
                 .build();
     }
@@ -108,7 +105,7 @@ public class DailyStatisticBatch {
 
         System.out.println("[Reader] Initialized with lowerBound=" + lowerBound + ", upperBound=" + upperBound);
 
-        return new ItemReader<DailyVideoView>() {
+        return new ItemReader<>() {
             private Long lastProcessedId = lowerBound; // lowerBound로 초기화
             private static final int PAGE_SIZE = 8000;
             private List<DailyVideoView> currentPageData = new ArrayList<>();
@@ -116,22 +113,25 @@ public class DailyStatisticBatch {
 
             @Override
             public DailyVideoView read() throws Exception {
+
+                //한 번에 8000개를 가져오지만, read()가 호출될 때마다 한 개씩 반환하는 방식
+
                 // 종료 조건: Partition 범위 내 데이터를 모두 처리한 경우
                 if ((currentPageData.isEmpty() || nextIndex >= currentPageData.size()) && lastProcessedId > upperBound) {
                     System.out.println("[Reader] All data processed for this partition. Terminating.");
                     return null;
                 }
 
-                // 데이터를 모두 처리한 경우 새로운 데이터를 Fetch
+                // step 한번당 8000개의 data를 read하는 경우
                 if (currentPageData.isEmpty() || nextIndex >= currentPageData.size()) {
                     System.out.println("[Reader] Fetching data between " + lastProcessedId + " and " + upperBound);
 
-                    // 데이터를 반복해서 Fetch하며, 같은 videoId를 끝까지 처리
+
                     currentPageData = jdbcRepository.findByVideoIdBetweenOrderByVideoId(
                             lastProcessedId, upperBound, PAGE_SIZE
                     );
 
-                    // Fetch한 데이터가 없으면 다음 videoId로 넘어가기
+
                     if (!currentPageData.isEmpty()) {
                         lastProcessedId = currentPageData.get(currentPageData.size() - 1).getVideoId() + 1;
                     }

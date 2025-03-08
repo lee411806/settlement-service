@@ -1,4 +1,4 @@
-package com.sparta.settlementservice.batch.repo;
+package com.sparta.settlementservice.batch.repo.slave;
 
 import com.sparta.settlementservice.batch.entity.Top5Statistics;
 import org.springframework.data.jpa.repository.JpaRepository;

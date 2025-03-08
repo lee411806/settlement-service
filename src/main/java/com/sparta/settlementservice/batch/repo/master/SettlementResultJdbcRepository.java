@@ -1,4 +1,4 @@
-package com.sparta.settlementservice.batch.repo;
+package com.sparta.settlementservice.batch.repo.master;
 
 import com.sparta.settlementservice.batch.entity.SettlementResult;
 import org.springframework.jdbc.core.JdbcTemplate;

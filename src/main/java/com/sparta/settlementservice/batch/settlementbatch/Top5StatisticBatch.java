@@ -3,9 +3,8 @@ package com.sparta.settlementservice.batch.settlementbatch;
 import com.sparta.settlementservice.batch.config.BatchExecutionDecider;
 import com.sparta.settlementservice.batch.dto.VideoViewStats;
 import com.sparta.settlementservice.batch.entity.Top5Statistics;
-import com.sparta.settlementservice.batch.repo.DailyViewPlaytimeJdbcRepository;
-import com.sparta.settlementservice.batch.repo.Top5StatisticsRepository;
-import net.minidev.json.JSONUtil;
+import com.sparta.settlementservice.batch.repo.master.DailyViewPlaytimeJdbcRepository;
+import com.sparta.settlementservice.batch.repo.slave.Top5StatisticsRepository;
 import org.springframework.batch.core.Job;
 import org.springframework.batch.core.Step;
 import org.springframework.batch.core.configuration.annotation.StepScope;
@@ -15,7 +14,6 @@ import org.springframework.batch.core.step.builder.StepBuilder;
 import org.springframework.batch.item.ItemProcessor;
 import org.springframework.batch.item.ItemReader;
 import org.springframework.batch.item.ItemWriter;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.transaction.PlatformTransactionManager;
@@ -64,7 +62,8 @@ public class Top5StatisticBatch {
     @Bean
     public Step dailyTop5Step(JobRepository jobRepository, PlatformTransactionManager transactionManager) {
         return new StepBuilder("dailyTop5Step", jobRepository)
-                .<VideoViewStats, Top5Statistics>chunk(5, transactionManager)
+                .<VideoViewStats, Top5Statistics>chunk(10
+                        , transactionManager)
                 .reader(dailyTop5Reader())
                 .processor(top5StatisticsProcessor())
                 .writer(top5StatisticsWriter()) //
@@ -74,7 +73,7 @@ public class Top5StatisticBatch {
     @Bean
     public Step weeklyTop5Step(JobRepository jobRepository, PlatformTransactionManager transactionManager) {
         return new StepBuilder("weeklyTop5Step", jobRepository)
-                .<VideoViewStats, Top5Statistics>chunk(5, transactionManager)
+                .<VideoViewStats, Top5Statistics>chunk(10, transactionManager)
                 .reader(weeklyTop5Reader())
                 .processor(top5StatisticsProcessor()) // 통합된 Processor 사용
                 .writer(top5StatisticsWriter()) // 통합된 Writer 사용
@@ -84,7 +83,7 @@ public class Top5StatisticBatch {
     @Bean
     public Step monthlyTop5Step(JobRepository jobRepository, PlatformTransactionManager transactionManager) {
         return new StepBuilder("monthlyTop5Step", jobRepository)
-                .<VideoViewStats, Top5Statistics>chunk(5, transactionManager)
+                .<VideoViewStats, Top5Statistics>chunk(10, transactionManager)
                 .reader(monthlyTop5Reader())
                 .processor(top5StatisticsProcessor()) // 통합된 Processor 사용
                 .writer(top5StatisticsWriter()) // 통합된 Writer 사용

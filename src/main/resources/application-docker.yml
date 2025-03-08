@@ -3,10 +3,17 @@ spring:
     name: settlement-service
 
   datasource:
-    url: jdbc:mysql://mysql-db:3306/settlementdb
-    username: root
-    password: manager
-    driver-class-name: com.mysql.cj.jdbc.Driver
+    master:
+      url: jdbc:mysql://mysql-master:3306/settlementdb?useSSL=false&useUnicode=true&serverTimezone=Asia/Seoul&allowPublicKeyRetrieval=true
+      username: root
+      password: manager
+      driver-class-name: com.mysql.cj.jdbc.Driver
+
+    slave:
+      url: jdbc:mysql://mysql-slave:3306/settlementdb?useSSL=false&useUnicode=true&serverTimezone=Asia/Seoul&allowPublicKeyRetrieval=true
+      username: root
+      password: manager
+      driver-class-name: com.mysql.cj.jdbc.Driver
 
   data:
     redis:

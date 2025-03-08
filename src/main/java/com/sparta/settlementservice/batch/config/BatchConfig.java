@@ -20,8 +20,8 @@ public class BatchConfig {
         ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
         executor.setCorePoolSize(4);  // 최소 4개의 스레드
         executor.setMaxPoolSize(8);   // 최대 8개의 스레드
-        executor.setQueueCapacity(100);
-        executor.setThreadNamePrefix("batch-executor-");
+        executor.setQueueCapacity(100); //스레드 풀이 바쁠 때 최대 100개 작업을 대기열에 넣어둠
+        executor.setThreadNamePrefix("batch-executor-"); //스레드 이름 설정
         executor.initialize();
         return executor;
     }

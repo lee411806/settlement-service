@@ -1,7 +1,7 @@
 services:
-  db:  # Master
+  mysql-master:  # Master
     image: mysql:8.3  # MySQL 버전 8.3으로 명시
-    container_name: mysql-db
+    container_name: mysql-master
     environment:
       MYSQL_ROOT_PASSWORD: manager
       MYSQL_DATABASE: settlementdb
@@ -40,7 +40,7 @@ services:
       --enforce-gtid-consistency=ON
       --replicate-do-db=settlementdb
     depends_on:
-      db:
+      mysql-master:
         condition: service_healthy
     volumes:
       - slave_data:/var/lib/mysql
@@ -68,7 +68,8 @@ services:
       - "8080:8080"
     environment:
       SPRING_APPLICATION_NAME: settlement-service
-      SPRING_DATASOURCE_URL: jdbc:mysql://db:3306/settlementdb
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql-master:3306/settlementdb
+      SPRING_DATASOURCE_SLAVE_URL: jdbc:mysql://mysql-slave:3306/settlementdb
       SPRING_DATASOURCE_USERNAME: root
       SPRING_DATASOURCE_PASSWORD: manager
       SPRING_DATASOURCE_DRIVER_CLASS_NAME: com.mysql.cj.jdbc.Driver
@@ -89,7 +90,9 @@ services:
     working_dir: /app
     entrypoint: ["java", "-jar", "app.jar"]
     depends_on:
-      db:
+      mysql-master:
+        condition: service_healthy
+      mysql-slave:
         condition: service_healthy
       redis:
         condition: service_healthy
