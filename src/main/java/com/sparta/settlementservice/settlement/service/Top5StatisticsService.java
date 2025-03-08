@@ -2,7 +2,7 @@ package com.sparta.settlementservice.settlement.service;
 
 
 import com.sparta.settlementservice.batch.entity.Top5Statistics;
-import com.sparta.settlementservice.batch.repo.Top5StatisticsRepository;
+import com.sparta.settlementservice.batch.repo.slave.Top5StatisticsRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 

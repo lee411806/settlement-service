@@ -1,7 +1,7 @@
 package com.sparta.settlementservice.settlement.service;
 
 import com.sparta.settlementservice.batch.entity.SettlementResult;
-import com.sparta.settlementservice.batch.repo.SettlementResultRepository;
+import com.sparta.settlementservice.batch.repo.slave.SettlementResultRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
