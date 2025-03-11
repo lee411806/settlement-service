@@ -83,7 +83,6 @@ services:
       SPRING_BATCH_JDBC_INITIALIZE_SCHEMA: always
       SPRING_BATCH_JDBC_SCHEMA: classpath:org/springframework/batch/core/schema-mysql.sql
       LOGGING_LEVEL_ORG_SPRINGFRAMEWORK_CACHE: trace
-      JWT_SECRET: ${JWT_SECRET}
       SPRING_CONFIG_LOCATION: classpath:/application-docker.yml
     volumes:
       - ./build/libs/settlement-service-0.0.1-SNAPSHOT.jar:/app/app.jar
