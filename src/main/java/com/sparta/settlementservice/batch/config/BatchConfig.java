@@ -1,9 +1,6 @@
 package com.sparta.settlementservice.batch.config;
 
 
-import org.springframework.batch.core.Step;
-import org.springframework.batch.core.partition.PartitionHandler;
-import org.springframework.batch.core.partition.support.TaskExecutorPartitionHandler;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
