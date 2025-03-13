@@ -1,5 +1,7 @@
 package com.sparta.settlementservice.common.config;
 
+import com.zaxxer.hikari.HikariConfig;
+import com.zaxxer.hikari.HikariDataSource;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.jdbc.DataSourceBuilder;
 import org.springframework.context.annotation.Bean;
@@ -27,9 +29,17 @@ public class MasterDBConfig {
 
     @Primary
     @Bean
-    @ConfigurationProperties(prefix = "spring.datasource.master") //  Master DB 설정
-    public DataSource masterDBSource() {
-        return DataSourceBuilder.create().build();
+    @ConfigurationProperties(prefix = "spring.datasource.master")
+    public HikariDataSource masterDBSource() {
+        HikariDataSource dataSource = DataSourceBuilder.create()
+                .type(HikariDataSource.class)
+                .build();
+
+        // 커넥션 풀 크기 30으로 설정
+        dataSource.setMaximumPoolSize(100);
+        // 30초 동안 사용되지 않은 커넥션 자동 종료
+        dataSource.setIdleTimeout(30000);
+        return dataSource;
     }
 
 

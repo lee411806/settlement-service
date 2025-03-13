@@ -8,13 +8,21 @@ spring:
       username: root
       password: manager
       driver-class-name: com.mysql.cj.jdbc.Driver
+#      hikari:
+#        maximum-pool-size: 30  # 마스터 커넥션 풀 30개  , 설정이 안먹히는 관계로 db config에 pool사이즈 작성
 
     slave:
       jdbc-url: jdbc:mysql://mysql-slave:3306/settlementdb?useSSL=false&useUnicode=true&serverTimezone=Asia/Seoul&allowPublicKeyRetrieval=true
       username: root
       password: manager
       driver-class-name: com.mysql.cj.jdbc.Driver
+#      hikari:
+#        maximum-pool-size: 30  # 슬레이브 커넥션 풀 30개
 
+logging:
+  level:
+    com.zaxxer.hikari: DEBUG
+    org.springframework.cache: trace  #  HikariCP 디버그 로그 활성화 추가
 
   data:
     redis:
@@ -22,6 +30,7 @@ spring:
       port: 6379
 
   jpa:
+    open-in-view: false
     hibernate:
       ddl-auto: update
       naming:
@@ -69,6 +78,3 @@ spring:
 jwt:
   secret: ${JWT_SECRET:default_secret}
 
-logging:
-  level:
-    org.springframework.cache: trace # Redis 관련 로깅 레벨 설정
