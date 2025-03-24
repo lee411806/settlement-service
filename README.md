@@ -1,14 +1,17 @@
 # 정산 시스템 프로젝트
 
-📅 <b>2024.11 ~ 2024.12 (4주)</b> | (1명)
+📅 <b>2024.11 ~ 2024.12 (4주) , 보완 중 </b> | (1명)
 
 [![Java][Java]][Java-url]
 [![Spring Boot][SpringBoot]][SpringBoot-url]
 [![Spring Batch][SpringBatch]][SpringBatch-url]
 [![Spring Security][SpringSecurity]][SpringSecurity-url]
+[![JWT][JWT]][JWT-url]
 [![JPA][JPA]][JPA-url]
 [![MySQL][MySQL]][MySQL-url]
 [![Redis][Redis]][Redis-url]
+[![MasterSlave][MasterSlave]][MasterSlave-url]
+[![JMeter][JMeter]][JMeter-url]
 
 <!-- Badge 이미지 링크 -->
 [Java]: https://img.shields.io/badge/Java-007396?style=for-the-badge&logo=java&logoColor=white
@@ -18,6 +21,9 @@
 [JPA]: https://img.shields.io/badge/JPA-6DB33F?style=for-the-badge&logo=hibernate&logoColor=white
 [MySQL]: https://img.shields.io/badge/MySQL-4479A1?style=for-the-badge&logo=mysql&logoColor=white
 [Redis]: https://img.shields.io/badge/Redis-DC382D?style=for-the-badge&logo=redis&logoColor=white
+[JWT]: https://img.shields.io/badge/JWT-000000?style=for-the-badge&logo=jsonwebtokens&logoColor=white  
+[MasterSlave]: https://img.shields.io/badge/Master--Slave-555555?style=for-the-badge&logo=databricks&logoColor=white  
+[JMeter]: https://img.shields.io/badge/JMeter-D22128?style=for-the-badge&logo=apache-jmeter&logoColor=white  
 
 <!-- 웹사이트 링크 -->
 [Java-url]: https://www.oracle.com/java/
@@ -27,7 +33,9 @@
 [JPA-url]: https://spring.io/projects/spring-data-jpa
 [MySQL-url]: https://www.mysql.com/
 [Redis-url]: https://redis.io/
-
+[JWT-url]: https://jwt.io/  
+[MasterSlave-url]: https://en.wikipedia.org/wiki/Master/slave_(technology)  
+[JMeter-url]: https://jmeter.apache.org/
 
 
 ### 기능
@@ -42,6 +50,8 @@
 ## 프로젝트 목표
 1. **단일 서버에서 대규모 데이터를 최적으로 처리할 수 있는 배치 시스템 구현**  <br>
 2. **Redis를 활용한 실시간 데이터 처리**
+3. **Master-Slave DB 구조로 가용성 확보**
+4. **JMeter를 활용한 성능 부하 테스트 및 병목 구간 확인**
 
 
 <br>
@@ -75,24 +85,49 @@
 - 이번 프로젝트는 단일 서버에서 3200만 건 데이터를 안정적으로 처리하며 최적화 가능성을 확인 
 
 <br>
+<h2 align="center"> 2. Master-Slave 구조 적용에 따른 조회 성능 개선</h2>
 
-<h2 align="center"> 2. 어뷰징 방지 기능 최적화(92.21% 향상) </h2>
+### 2.1 최종 성능
+- **조회 요청 10,000건 기준**  
+- 적용 전 대비 최대 **1634배 향상**, TPS **18.3배 증가**
 
-### 2.1 최종성능
+### 2.2 성능 개선 지표
+| **지표**       | **적용 전** | **적용 후** | **개선 내용**                           |
+|----------------|-------------|-------------|------------------------------------------|
+| **90% 지점**    | 354ms       | 27ms        | 🚀 **327ms 개선 (13.1배 향상)**           |
+| **95% 지점**    | 610ms       | 34ms        | 🚀 **576ms 개선 (17.9배 향상)**           |
+| **99% 지점**    | 84994ms     | 52ms        | 🚀 **84942ms 개선 (1634배 향상!)**        |
+| **Throughput** | 28 TPS      | 513 TPS     | 🚀 **18.3배 증가**                        |
+
+### 2.3 테스트 조건
+- **도구**: JMeter
+- **요청 수**: 10,000건
+- **기준 작업**: 단순 조회 요청
+- **목적**: Master-Slave 구조 적용에 따른 조회 성능 변화 측정
+
+### 2.4 결론
+- Master-Slave 구조 도입으로 읽기 부하 분산에 성공
+- 평균 응답 속도 및 처리량(TPS) 모두 대폭 개선
+
+<br>
+
+<h2 align="center"> 3. 어뷰징 방지 기능 최적화(92.21% 향상) </h2>
+
+### 3.1 최종성능
   - 100만개 데이터 기준 처리 결과 : 14ms (20번 요청 평균)
 
-### 2.2 성능 개선 추이
+### 3.2 성능 개선 추이
 | **단계**          | **데이터 규모**     | **처리 시간**         | **개선율**       |
 |--------------------|---------------------|-----------------------|------------------|
 | **최적화 전**      | 100만 건           | 약 283ms              | -                |
 | **최적화 후**      | 100만 건           | 약 14ms               | 약 95.05%        |
 
 
-### 2.3 주요 개선 포인트
+### 3.3 주요 개선 포인트
  - RDBMS의 복잡한 읽기/쓰기 과정을 Redis 캐시로 대체
  - 30초 만료 기능(TTL)을 활용한 데이터 자동 삭제로 검증요청 간소화
    
-### 2.4 최종 결론
+### 3.4 최종 결론
  - RDBMS가 아닌 Redis를 선택함으로써 요구사항에 적합한 기술이 업무 효율성을 극대화할 수 있음을 확인
 
 <br>
