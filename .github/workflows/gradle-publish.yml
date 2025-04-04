@@ -30,7 +30,8 @@ jobs:
 
     # 3. Gradle로 jar 빌드
     - name: Build JAR
-      run: ./gradlew clean build
+    # ci cd 워크플로우 나눠서 ci통과 시 테스트 다시 안하도록 조정
+      run: ./gradlew clean build -x test
 
     # 4. EC2에 jar 파일 전송 (scp 방식 : SSH 사용해서 파일 넘김)
     - name: Copy JAR to EC2
