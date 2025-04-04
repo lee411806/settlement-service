@@ -14,7 +14,7 @@ on:
 
 jobs:
   test:
-  # 테스트를 실행할 가상의 우분투 서버 지정
+    # 테스트를 실행할 가상의 우분투 서버 지정
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
@@ -23,7 +23,11 @@ jobs:
         uses: actions/setup-java@v3
         with:
           java-version: '17'
-  # CI CD배포 환경 분리, 여기서는 테스트만
+          distribution: 'temurin'   # 사용할 JDK 배포판을 명시적으로 지정
+
+      - name: Make gradlew executable   # 파일 권한 설정
+        run: chmod +x ./gradlew
+
       - name: Run Tests
         run: ./gradlew test
 
