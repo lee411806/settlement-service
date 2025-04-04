@@ -7,7 +7,7 @@
 
 # .github/workflows/deploy.yml
 
-name: CI/CD - Deploy to EC2
+name: CD - Deploy to EC2
 
 on:
   push:
