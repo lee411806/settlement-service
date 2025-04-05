@@ -12,6 +12,7 @@
 [![Redis][Redis]][Redis-url]
 [![MasterSlave][MasterSlave]][MasterSlave-url]
 [![JMeter][JMeter]][JMeter-url]
+[![GitHub Actions][GitHubActions]][GitHubActions-url]
 
 <!-- Badge 이미지 링크 -->
 [Java]: https://img.shields.io/badge/Java-007396?style=for-the-badge&logo=java&logoColor=white
@@ -24,6 +25,7 @@
 [JWT]: https://img.shields.io/badge/JWT-000000?style=for-the-badge&logo=jsonwebtokens&logoColor=white  
 [MasterSlave]: https://img.shields.io/badge/Master--Slave-555555?style=for-the-badge&logo=databricks&logoColor=white  
 [JMeter]: https://img.shields.io/badge/JMeter-D22128?style=for-the-badge&logo=apache-jmeter&logoColor=white  
+[GitHubActions]: https://img.shields.io/badge/GitHub%20Actions-2088FF?style=for-the-badge&logo=github-actions&logoColor=white
 
 <!-- 웹사이트 링크 -->
 [Java-url]: https://www.oracle.com/java/
@@ -36,7 +38,7 @@
 [JWT-url]: https://jwt.io/  
 [MasterSlave-url]: https://en.wikipedia.org/wiki/Master/slave_(technology)  
 [JMeter-url]: https://jmeter.apache.org/
-
+[GitHubActions-url]: https://github.com/features/actions
 
 ### 기능
 | **User-service**          |    **User-Streaming-service**       |
@@ -48,10 +50,10 @@
 
 
 ## 프로젝트 목표
-1. **단일 서버에서 대규모 데이터를 최적으로 처리할 수 있는 배치 시스템 구현**  <br>
-2. **Redis를 활용한 실시간 데이터 처리**
-3. **Master-Slave DB 구조로 가용성 확보**
-4. **JMeter를 활용한 성능 부하 테스트 및 병목 구간 확인**
+1. **단일 서버에서 대규모 데이터를 최적으로 처리할 수 있는 시스템 구현**  <br>
+2. **실시간 데이터 처리**
+3. **가용성 확보**
+4. **성능 부하 테스트 및 병목 구간 확인**
 
 
 <br>
@@ -156,8 +158,7 @@
 
 
 ## 🏗 아키텍쳐
-![image](https://github.com/user-attachments/assets/86468bca-7b2a-4db2-bfee-71a014963853)
-
+![image](https://github.com/user-attachments/assets/fabb7187-d25d-42f8-b824-9e684fb73755)
 
 
 <br>
