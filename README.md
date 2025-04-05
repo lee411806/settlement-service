@@ -143,20 +143,24 @@
 
 
 ## 🏗 아키텍쳐
-![image](https://github.com/user-attachments/assets/fabb7187-d25d-42f8-b824-9e684fb73755)
+<img width="593" alt="화면 캡처 2025-04-05 195228" src="https://github.com/user-attachments/assets/6ab565d3-332d-4957-a0db-100fd0c49e1b" />
+
 
 
 <br>
 
-<!-- 
+ 
 ## :bookmark: API 문서
-🔗 [Postman API Documentation](https://documenter.getpostman.com/view/30989395/2sAYBPktii)
+
+[![Postman](https://img.shields.io/badge/Postman-FF6C37?style=for-the-badge&logo=postman&logoColor=white)](https://documenter.getpostman.com/view/30989395/2sAYBPktii)[![API Documentation](https://img.shields.io/badge/API%20Documentation-6B7280?style=for-the-badge&logo=book&logoColor=white)](https://documenter.getpostman.com/view/30989395/2sAYBPktii)
 
 <br>
--->
+
 
 ## 📙ERD
+<img width="800" alt="화면 캡처 2025-04-05 195107" src="https://github.com/user-attachments/assets/027814ec-5721-420f-bc5c-7914d166bad8" />
 
-![image](https://github.com/user-attachments/assets/2cb2a7b2-a574-4cb4-a228-0eeba7cf0aa8)
+
+
 
 
