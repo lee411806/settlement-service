@@ -18,12 +18,6 @@ spring:
       driver-class-name: com.mysql.cj.jdbc.Driver
 #      hikari:
 #        maximum-pool-size: 30  # 슬레이브 커넥션 풀 30개
-
-logging:
-  level:
-    com.zaxxer.hikari: DEBUG
-    org.springframework.cache: trace  #  HikariCP 디버그 로그 활성화 추가
-
   data:
     redis:
       host: redis
@@ -60,14 +54,18 @@ logging:
             client-secret: 4CmlmcBxgu
             redirect-uri: http://localhost:8080/login/oauth2/code/naver
             authorization-grant-type: authorization_code
-            scope: name,email
+            scope:
+              - name
+              - email
           google:
             client-name: google
             client-id: 1079304204618-m7q03mqm24evnrrdtj9b9l4etvnq2hud.apps.googleusercontent.com
             client-secret: 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
             redirect-uri: http://localhost:8080/login/oauth2/code/google
             authorization-grant-type: authorization_code
-            scope: profile,email
+            scope:
+              - profile
+              - email
         provider:
           naver:
             authorization-uri: https://nid.naver.com/oauth2.0/authorize
@@ -76,5 +74,9 @@ logging:
             user-name-attribute: response
 
 jwt:
-  secret: ${JWT_SECRET:default_secret}
+  secret: ${JWT_SECRET:MySuperSecureJwtSecretKey123456!}
 
+logging:
+  level:
+    com.zaxxer.hikari: DEBUG
+    org.springframework.cache: trace  #  HikariCP 디버그 로그 활성화 추가

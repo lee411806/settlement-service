@@ -38,8 +38,8 @@ public class StreamingService {
     }
 
     // 정지(Pause) 메서드
-    public void pause(Long userId, Long videoId, Long currentPosition) {
-        videoViewHelper.createVideoViewHistory(userId, videoId, currentPosition);
+    public int pause(Long userId, Long videoId, Long currentPosition) {
+        return videoViewHelper.createVideoViewHistory(userId, videoId, currentPosition);
     }
 
 }
