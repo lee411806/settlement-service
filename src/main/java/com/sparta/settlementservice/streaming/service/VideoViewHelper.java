@@ -35,7 +35,7 @@ public class VideoViewHelper {
 
     // 동영상 정지 시 currentposition 저장 메서드
     @Transactional
-    public void createVideoViewHistory(Long userId, Long videoId, Long currentPosition) {
+    public int createVideoViewHistory(Long userId, Long videoId, Long currentPosition) {
         Long videoLength = videoRepository.findVideoLengthById(videoId);
 
         if (videoLength == null) {
@@ -50,6 +50,7 @@ public class VideoViewHelper {
 
         history.setCurrentPosition(currentPosition);
         videoViewHistoryRepository.save(history);
+        return 0;
     }
 
     // 현재 재생 위치가 영상 길이를 초과하는지 체크
