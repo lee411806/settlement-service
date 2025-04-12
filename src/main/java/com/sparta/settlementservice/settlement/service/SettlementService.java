@@ -16,7 +16,7 @@ public class SettlementService {
 
     private final SettlementResultRepository settlementResultRepository; //  변경됨
 
-    public List<SettlementResult> getSettlement(String dateType, LocalDate startDate) { // Settlement → SettlementResult
+    public List<SettlementResult> getSettlement(Long videoId, String dateType, LocalDate startDate) { // Settlement → SettlementResult
         LocalDate start, end;
         System.out.println(dateType);
         System.out.println(startDate);
@@ -33,7 +33,9 @@ public class SettlementService {
             throw new IllegalArgumentException("Invalid dateType: " + dateType);
         }
 
-        return settlementResultRepository.findByDateTypeAndStartDateBetween(dateType, start, end);
+        return settlementResultRepository.findByVideoIdAndDateTypeAndStartDateBetween(
+                videoId, dateType, start, end
+        );
     }
 }
 

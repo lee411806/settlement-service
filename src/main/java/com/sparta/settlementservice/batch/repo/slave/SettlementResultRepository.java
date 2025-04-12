@@ -7,5 +7,6 @@ import java.time.LocalDate;
 import java.util.List;
 
 public interface SettlementResultRepository extends JpaRepository<SettlementResult, Long> {
-    List<SettlementResult> findByDateTypeAndStartDateBetween(String dateType, LocalDate start, LocalDate end);
+    List<SettlementResult> findByVideoIdAndDateTypeAndStartDateBetween(
+            Long videoId, String dateType, LocalDate start, LocalDate end);
 }
