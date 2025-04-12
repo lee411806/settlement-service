@@ -1,12 +1,14 @@
 package com.sparta.settlementservice.streaming.service;
 
 
+import com.sparta.settlementservice.streaming.dto.PauseResponse;
 import com.sparta.settlementservice.streaming.dto.PlayRequest;
+import com.sparta.settlementservice.streaming.dto.PlayResponse;
 import com.sparta.settlementservice.user.jwt.JWTUtil;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
@@ -19,7 +21,7 @@ public class StreamingService {
 
 
     // 동영상 재생 서비스
-    public int play(Long videoId, HttpServletRequest httpServletRequest, PlayRequest playRequest) {
+    public PlayResponse play(Long videoId, HttpServletRequest httpServletRequest, PlayRequest playRequest) {
         String jwtToken = jwtUtil.getTokenFromCookies(httpServletRequest);
         String ipAddress = ipHelper.getClientIp(httpServletRequest); // 헬퍼 사용
 
@@ -29,17 +31,18 @@ public class StreamingService {
 
 
         if (abusePreventionHelper.isAbusiveRequest(jwtToken, ipAddress)) { // 어뷰징 체크
-            System.out.println("어뷰징입니다.");
-            return 0;
+            return new PlayResponse(false, "어뷰징 요청입니다.");
         } else {
-            return videoViewHelper.createDailyVideoView(videoId,playRequest); // 헬퍼로 시청 기록 생성
+            videoViewHelper.createDailyVideoView(videoId, playRequest); // 헬퍼로 시청 기록 생성
+            return new PlayResponse(true, "시청 기록 저장 완료");
         }
 
     }
 
     // 정지(Pause) 메서드
-    public int pause(Long userId, Long videoId, Long currentPosition) {
-        return videoViewHelper.createVideoViewHistory(userId, videoId, currentPosition);
+    public PauseResponse pause(Long userId, Long videoId, Long currentPosition) {
+
+         return videoViewHelper.createVideoViewHistory(userId, videoId, currentPosition);
     }
 
 }
