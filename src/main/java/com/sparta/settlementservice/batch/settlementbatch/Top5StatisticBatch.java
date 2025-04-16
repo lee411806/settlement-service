@@ -4,7 +4,7 @@ import com.sparta.settlementservice.batch.config.BatchExecutionDecider;
 import com.sparta.settlementservice.batch.dto.VideoViewStats;
 import com.sparta.settlementservice.batch.entity.Top5Statistics;
 import com.sparta.settlementservice.batch.repo.master.DailyViewPlaytimeJdbcRepository;
-import com.sparta.settlementservice.batch.repo.slave.Top5StatisticsRepository;
+import com.sparta.settlementservice.batch.repo.master.Top5StatisticsJdbcRepository;
 import org.springframework.batch.core.Job;
 import org.springframework.batch.core.Step;
 import org.springframework.batch.core.configuration.annotation.StepScope;
@@ -26,17 +26,15 @@ import java.util.List;
 public class Top5StatisticBatch {
 
     private final DailyViewPlaytimeJdbcRepository dailyViewPlaytimeJdbcRepository;
-    private final Top5StatisticsRepository top5StatisticsRepository;
-    private final BatchExecutionDecider batchExecutionDecider;
+    private final Top5StatisticsJdbcRepository top5StatisticsJdbcRepository;
 
     public Top5StatisticBatch(
             DailyViewPlaytimeJdbcRepository dailyViewPlaytimeJdbcRepository
-            , Top5StatisticsRepository top5StatisticsRepository
-            , BatchExecutionDecider batchExecutionDecider) {
+            , BatchExecutionDecider batchExecutionDecider
+    , Top5StatisticsJdbcRepository top5StatisticsJdbcRepository) {
 
         this.dailyViewPlaytimeJdbcRepository = dailyViewPlaytimeJdbcRepository;
-        this.top5StatisticsRepository = top5StatisticsRepository;
-        this.batchExecutionDecider = batchExecutionDecider;
+        this.top5StatisticsJdbcRepository = top5StatisticsJdbcRepository;
     }
 
     @Bean
@@ -202,8 +200,6 @@ public class Top5StatisticBatch {
     }
 
 
-
-
     @Bean
     public ItemProcessor<VideoViewStats, Top5Statistics> top5StatisticsProcessor() {
         return item -> {
@@ -230,12 +226,13 @@ public class Top5StatisticBatch {
             System.out.println(" [ItemWriter] 저장할 데이터 개수: " + items.size());
 
             if (!items.isEmpty()) {
-                top5StatisticsRepository.saveAll(items);
+                top5StatisticsJdbcRepository.saveAll(items.getItems());  //  네가 만든 JDBC 레포지토리 호출
                 System.out.println("[ItemWriter] 데이터 저장 완료!");
             } else {
                 System.out.println("[ItemWriter] 저장할 데이터가 없음!");
             }
         };
+
     }
 }
 

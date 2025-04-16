@@ -1,6 +1,5 @@
 package com.sparta.settlementservice.common.config;
 
-import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.jdbc.DataSourceBuilder;
@@ -13,9 +12,6 @@ import org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean;
 import org.springframework.orm.jpa.vendor.HibernateJpaVendorAdapter;
 import org.springframework.transaction.PlatformTransactionManager;
 
-import javax.sql.DataSource;
-import java.util.HashMap;
-
 @Configuration
 @EnableJpaRepositories(
         basePackages = {"com.sparta.settlementservice.batch.repo.master",
@@ -24,7 +20,6 @@ import java.util.HashMap;
         entityManagerFactoryRef = "masterEntityManagerFactory",
         transactionManagerRef = "masterTransactionManager"
 )
-
 public class MasterDBConfig {
 
     @Primary

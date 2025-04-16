@@ -20,7 +20,7 @@ public class DailyViewPlaytimeJdbcRepository {
 
     // Find by VideoId range and order by VideoId
     public List<DailyVideoView> findByVideoIdBetweenOrderByVideoId(Long lowerBound, Long upperBound, int pageSize) {
-        String sql = "SELECT * FROM dailyVideoView " +
+        String sql = "SELECT * FROM DailyVideoView " +
                 "WHERE videoId BETWEEN ? AND ? " +
                 "ORDER BY videoId " +
                 "LIMIT ?";
@@ -42,7 +42,7 @@ public class DailyViewPlaytimeJdbcRepository {
 
         // SQL 문 작성 (ON DUPLICATE KEY UPDATE 포함)
         String sql = """
-                    INSERT INTO dailyViewPlaytime (videoId, createdAt, totalViewCount, totalAdViewCount, totalPlayTime)
+                    INSERT INTO DailyViewPlaytime (videoId, createdAt, totalViewCount, totalAdViewCount, totalPlayTime)
                     VALUES (?, ?, ?, ?, ?)
                     ON DUPLICATE KEY UPDATE 
                     createdAt = VALUES(createdAt), 
@@ -90,7 +90,7 @@ public class DailyViewPlaytimeJdbcRepository {
         String orderByColumn = statType.equals("VIEW_COUNT") ? "SUM(viewCount)" : "SUM(playTime)";
 
         String sql = "SELECT videoId, " + orderByColumn + " AS totalValue " +
-                "FROM dailyVideoView " +
+                "FROM DailyVideoView " +
                 "WHERE DATE(createdAt) BETWEEN ? AND ? " +  //  startDate ~ endDate 범위 조회
                 "GROUP BY videoId " +
                 "ORDER BY totalValue DESC " +
@@ -110,7 +110,7 @@ public class DailyViewPlaytimeJdbcRepository {
     // Settlement 배치 Jdbc 활용
 
     public List<DailyViewPlaytime> findByDateBetweenOrderByDate(LocalDate startDate, LocalDate endDate, int pageSize) {
-        String sql = "SELECT * FROM dailyviewplaytime " +  //  테이블명 언더바 제거
+        String sql = "SELECT * FROM DailyViewPlaytime " +  //  테이블명 언더바 제거
                 "WHERE createdAt  BETWEEN ? AND ? " +
                 "ORDER BY createdAt  ASC " +
                 "LIMIT ?";

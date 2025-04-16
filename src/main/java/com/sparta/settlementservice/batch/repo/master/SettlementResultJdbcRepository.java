@@ -17,10 +17,10 @@ public class SettlementResultJdbcRepository {
 
     //settlement 결과 저장
     public void saveAllWithDuplicateCheckSettlement(List<SettlementResult> items) {
-        if (items.isEmpty()) return; // ✅ 저장할 데이터 없으면 바로 종료
+        if (items.isEmpty()) return; //  저장할 데이터 없으면 바로 종료
 
         String sql = """
-                INSERT INTO settlementResult (videoId, videoRevenue, adRevenue, totalRevenue, startDate, endDate, dateType)
+                INSERT INTO SettlementResult (videoId, videoRevenue, adRevenue, totalRevenue, startDate, endDate, dateType)
                 VALUES (?, ?, ?, ?, ?, ?, ?)
                 ON DUPLICATE KEY UPDATE 
                 videoRevenue = VALUES(videoRevenue),
