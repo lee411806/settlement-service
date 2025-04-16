@@ -23,7 +23,7 @@ public class StreamingController {
             , HttpServletRequest httpServletRequest
             , @RequestBody PlayRequest playRequest) {
         PlayResponse result =  streamingService.play(videoId, httpServletRequest, playRequest);
-
+        System.out.println("streaming 쪽 로그");
         if (!result.isSuccess()) {
             return ResponseEntity
                     .badRequest()

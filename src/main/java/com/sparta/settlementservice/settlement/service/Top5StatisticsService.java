@@ -33,8 +33,10 @@ public class Top5StatisticsService {
             throw new IllegalArgumentException("Invalid dateType: " + dateType);
         }
 
+
         // DB 조회
         return top5StatisticsRepository.findTop5ByDateTypeAndStartDateBetweenAndStaticTypeOrderByValueDesc(
                 dateType, start, end, staticType);
+
     }
 }
