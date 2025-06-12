@@ -100,7 +100,7 @@
   | **99% 지점**    | 84994ms     | 52ms        |  **84942ms 개선 (1634배 향상)**        |
   | **Throughput** | 28 TPS      | 513 TPS     |  **18.3배 증가**                        |
 
-### 2.4 Master Slave 
+### 2.2 Master Slave 
 - GTID 기반 Replica 생성
 - 읽기 요청을 slave서버로 보내 커넥션 수 분산 및 쓰기 조회 책임 분리
 
