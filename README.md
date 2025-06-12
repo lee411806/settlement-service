@@ -97,7 +97,7 @@
   |----------------|-------------|-------------|------------------------------------------|
   | **90% 지점**    | 354ms       | 27ms        |  **327ms 개선 (13.1배 향상)**           |
   | **95% 지점**    | 610ms       | 34ms        |  **576ms 개선 (17.9배 향상)**           |
-  | **99% 지점**    | 84994ms     | 52ms        |  **84942ms 개선 (1634배 향상!)**        |
+  | **99% 지점**    | 84994ms     | 52ms        |  **84942ms 개선 (1634배 향상)**        |
   | **Throughput** | 28 TPS      | 513 TPS     |  **18.3배 증가**                        |
 
 ### 2.4 Master Slave 
@@ -131,22 +131,21 @@
 <br>
 
 ## 🔫 트러블 슈팅
-- **읽기 속도 병목 문제**  
-  - 기존 OFFSET 기반 읽기 방식으로 인해 1, 2, 3차 최적화에서도 읽기 단계가 병목으로 작용
-  - **Paging 기반**으로 변경, **BETWEEN 조건**을 사용해 인덱스 활용 가능하게 조정
+- [Spring Batch 순환 참조 및 StepScope 병렬 처리 문제](https://www.notion.so/Spring-Batch-StepScope-20143673dd8c807ea829e1523356c396)
+- [Chunk 단위 배치에서 데이터 누적 저장 문제](https://www.notion.so/Chunk-20143673dd8c80d29224ee27a3d574b7)
+- [GTID 복제 문제](https://www.notion.so/Slave-1dd43673dd8c804ea65bf12ac33294c4)
+- [Spring Boot 멀티 DB 설정 시 Repository 중복 등록 문제](https://www.notion.so/Spring-Boot-DB-Repository-1de43673dd8c80e998ede0db785e4e8b)
+- [Dockerfile 누락 + 환경 분리 + 포트 충돌](https://www.notion.so/Docker-compose-1dd43673dd8c8041915dd214914ee35c)
+- [📚그 외 트러블슈팅 모음](https://www.notion.so/1dd43673dd8c80d9a894d5ab991b6952)
 
-- **멀티스레드 적용 문제**  
-  - **청크 단위에서 멀티스레드 처리**를 적용해도 순차적으로 처리되는 것에 한계
-  - 데이터를 파티셔닝으로 분리하고 각 파티션을 **비동기로 병렬 처리**
+<br>
 
-- **Streaming Service 코드 복잡성 문제**  
-  - 다양한 로직을 한 클래스에서 처리하려다 코드 복잡도가 증가
-  - **Helper Class 도입**으로 코드 간결화
-
-- **동시성 문제**  
-  - 동일한 videoId에 대한 조회수 증가 시 무결성 문제가 발생할 가능성
-  - **Atomic Update**를 도입해 쿼리 실행 동안만 락을 걸어 간단하고 빠르게 동시성 문제 해결
-
+## 🔎기술적 의사결정
+- [GitHub Actions 사전 검증을 위한 act 도입](https://www.notion.so/GitHub-Actions-act-1dd43673dd8c80379e69f1a008578c23)
+- [Replica 복제 방식 의사결정](https://www.notion.so/Replica-GTID-1e243673dd8c8024b883edc527019ccf)
+- [낙관적, 비관적 락 + Atomic Update 적용 의사결정](https://www.notion.so/Atomic-Update-1f243673dd8c80188185edea0290c6f4)
+- [Top5 & 정산 데이터 테이블 설계 의사결정](https://www.notion.so/Top5-20143673dd8c802fb3fbd45066f48948)
+- [📚그 외 의사결정 모음](https://www.notion.so/1dd43673dd8c8085806ad7d111e7fa9a)
 
 
 <br>
