@@ -13,6 +13,7 @@
 [![MasterSlave][MasterSlave]][MasterSlave-url]
 [![JMeter][JMeter]][JMeter-url]
 [![GitHub Actions][GitHubActions]][GitHubActions-url]
+[![Docker Compose][DockerCompose]][DockerCompose-url]
 
 <!-- Badge 이미지 링크 -->
 [Java]: https://img.shields.io/badge/Java-007396?style=for-the-badge&logo=java&logoColor=white
@@ -26,6 +27,7 @@
 [MasterSlave]: https://img.shields.io/badge/Master--Slave-555555?style=for-the-badge&logo=databricks&logoColor=white  
 [JMeter]: https://img.shields.io/badge/JMeter-D22128?style=for-the-badge&logo=apache-jmeter&logoColor=white  
 [GitHubActions]: https://img.shields.io/badge/GitHub%20Actions-2088FF?style=for-the-badge&logo=github-actions&logoColor=white
+[DockerCompose]: https://img.shields.io/badge/Docker%20Compose-2496ED?style=for-the-badge&logo=docker&logoColor=white
 
 <!-- 웹사이트 링크 -->
 [Java-url]: https://www.oracle.com/java/
@@ -39,6 +41,7 @@
 [MasterSlave-url]: https://en.wikipedia.org/wiki/Master/slave_(technology)  
 [JMeter-url]: https://jmeter.apache.org/
 [GitHubActions-url]: https://github.com/features/actions
+[DockerCompose-url]: https://docs.docker.com/compose/
 
 ### 기능
 | **User-service**          |    **User-Streaming-service**       |
